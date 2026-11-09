@@ -42,6 +42,7 @@
       └───────────────────────< (N) [pr_news_articles]
 
 
+
 ```
 
 ## 2. พจนานุกรมข้อมูล (Data Dictionary)
@@ -89,7 +90,12 @@
 | `transfer_time` | `TIME` | `NOT NULL` | เวลาที่โอนเงินตามสลิป | 
 | `slip_file_path` | `VARCHAR(500)` | `NOT NULL` | พาธเก็บไฟล์ภาพสลิปโอนเงินใน Object Storage ที่จำกัดสิทธิ์เข้าถึง | 
 | `slip_file_hash` | `CHAR(64)` | `INDEX, NULL` | ค่า Hash ของไฟล์ภาพสลิป เพื่อแจ้งเตือนกรณีมีผู้บริจาคแนบไฟล์สลิปซ้ำ | 
-| `verification_status` | `VARCHAR(20)` | `DEFAULT 'PENDING'` | สถานะตรวจสอบ (`PENDING` = รอตรวจสลิป, `APPROVED` = อนุมัติแล้ว, `REJECTED` = ไม่ผ่าน) | 
+| `verification_status` | `VARCHAR(30)` | `DEFAULT 'PENDING_SLIP_CHECK'` | สถานะตาม Flow ใหม่ (`PENDING_SLIP_CHECK` = รอตรวจสลิปเทียบ Book Bank, `WAITING_TREASURY_RD` = อนุมัติครั้งที่ 1 ส่งใบอนุโมทนาบัตรแล้ว รอยืนยันจากกองคลัง/คีย์สรรพากร, `COMPLETED_RD` = อนุมัติครั้งที่ 2 ส่งข้อมูลกรมสรรพากรและส่งเมลยืนยันแล้ว, `REJECTED` = ไม่ผ่าน) |
+| `slip_verified_by` | `INT` | `FK -> admin_users, NULL` | เจ้าหน้าที่ Admin ผู้กดอนุมัติครั้งที่ 1 (ตรวจชื่อ-สลิป-เลขภาษี ตรงกับ Book Bank) |
+| `slip_verified_at` | `TIMESTAMPTZ` | `NULL` | วันเวลาที่กดอนุมัติครั้งที่ 1 และสั่งส่งใบอนุโมทนาบัตรทางอีเมล |
+| `rd_submitted_by` | `INT` | `FK -> admin_users, NULL` | เจ้าหน้าที่ผู้กดอนุมัติครั้งที่ 2 (หลังกองคลังยืนยันและกรอกข้อมูลลงระบบ e-Donation กรมสรรพากรแล้ว) |
+| `rd_submitted_at` | `TIMESTAMPTZ` | `NULL` | วันเวลาที่กดอนุมัติครั้งที่ 2 |
+| `rd_confirm_email_sent_at` | `TIMESTAMPTZ` | `NULL` | วันเวลาที่ระบบส่งอีเมลฉบับที่ 2 ยืนยันการส่งข้อมูลกรมสรรพากรให้ผู้บริจาค | 
 | `verified_by` | `INT` | `FK -> admin_users, NULL` | รหัสเจ้าหน้าที่ผู้ตรวจสอบและอนุมัติสลิป | 
 | `verified_at` | `TIMESTAMPTZ` | `NULL` | วันเวลาที่เจ้าหน้าที่กดอนุมัติยอดโอน | 
 | `rejection_reason` | `TEXT` | `NULL` | หมายเหตุกรณีสลิปไม่ถูกต้องหรือยอดเงินไม่ตรง | 
@@ -186,16 +192,16 @@
 | `landing_page_configs` | `top_announcement_text` | `TEXT` | `NOT NULL` | ข้อความแถบประกาศด้านบนสุด (เช่น แจ้งระยะเวลาได้รับ e-Donation ภายใน 2 สัปดาห์) | 
 | `landing_page_configs` | `show_total_raised` | `BOOLEAN` | `DEFAULT TRUE` | เปิด/ปิดการแสดงผลยอดบริจาคสะสมบนหน้าแรก | 
 | `landing_page_configs` | `updated_by` | `INT` | `FK -> admin_users, NULL` | เจ้าหน้าที่ Admin ผู้แก้ไขหน้าประชาสัมพันธ์ล่าสุด | 
-| `landing_page_configs` | `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | วันเวลาที่บันทึกการแก้ไขหน้าแรกล่าสุด |
-| `landing_carousel_slides` | `slide_id` | `SERIAL / INT` | `PK` | รหัสสไลด์ Carousel บนหน้าแรก |
-| `landing_carousel_slides` | `display_order` | `INT` | `NOT NULL, DEFAULT 1` | ลำดับการแสดงผลสไลด์ (1, 2, 3...) สำหรับให้ Admin เลื่อนขึ้น/ลง |
-| `landing_carousel_slides` | `badge_tag` | `VARCHAR(150)` | `NOT NULL` | ป้ายกำกับมุมบนของสไลด์ เช่น `ภารกิจการผลิตบัณฑิตแพทย์` |
-| `landing_carousel_slides` | `slide_subtitle` | `VARCHAR(255)` | `NOT NULL` | หัวข้อย่อยของสไลด์ |
-| `landing_carousel_slides` | `slide_caption` | `TEXT` | `NOT NULL` | ข้อความคำบรรยายหลักที่แสดงบนภาพสไลด์ |
-| `landing_carousel_slides` | `image_path` | `VARCHAR(500)` | `NOT NULL` | พาธไฟล์รูปภาพของสไลด์ Carousel |
-| `landing_carousel_slides` | `cta_url` | `VARCHAR(500)` | `NULL` | ลิงก์ปลายทางเมื่อคลิกสไลด์ (ถ้ามี) |
-| `landing_carousel_slides` | `is_active` | `BOOLEAN` | `DEFAULT TRUE` | สถานะการแสดงผล (`TRUE` = แสดงใน Carousel, `FALSE` = ซ่อนไว้) |
-| `landing_carousel_slides` | `updated_by` | `INT` | `FK -> admin_users, NULL` | เจ้าหน้าที่ Admin ผู้แก้ไขสไลด์ล่าสุด |
+| `landing_page_configs` | `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | วันเวลาที่บันทึกการแก้ไขหน้าแรกล่าสุด | 
+| `landing_carousel_slides` | `slide_id` | `SERIAL / INT` | `PK` | รหัสสไลด์ Carousel บนหน้าแรก | 
+| `landing_carousel_slides` | `display_order` | `INT` | `NOT NULL, DEFAULT 1` | ลำดับการแสดงผลสไลด์ (1, 2, 3...) สำหรับให้ Admin เลื่อนขึ้น/ลง | 
+| `landing_carousel_slides` | `badge_tag` | `VARCHAR(150)` | `NOT NULL` | ป้ายกำกับมุมบนของสไลด์ เช่น `ภารกิจการผลิตบัณฑิตแพทย์` | 
+| `landing_carousel_slides` | `slide_subtitle` | `VARCHAR(255)` | `NOT NULL` | หัวข้อย่อยของสไลด์ | 
+| `landing_carousel_slides` | `slide_caption` | `TEXT` | `NOT NULL` | ข้อความคำบรรยายหลักที่แสดงบนภาพสไลด์ | 
+| `landing_carousel_slides` | `image_path` | `VARCHAR(500)` | `NOT NULL` | พาธไฟล์รูปภาพของสไลด์ Carousel | 
+| `landing_carousel_slides` | `cta_url` | `VARCHAR(500)` | `NULL` | ลิงก์ปลายทางเมื่อคลิกสไลด์ (ถ้ามี) | 
+| `landing_carousel_slides` | `is_active` | `BOOLEAN` | `DEFAULT TRUE` | สถานะการแสดงผล (`TRUE` = แสดงใน Carousel, `FALSE` = ซ่อนไว้) | 
+| `landing_carousel_slides` | `updated_by` | `INT` | `FK -> admin_users, NULL` | เจ้าหน้าที่ Admin ผู้แก้ไขสไลด์ล่าสุด | 
 | `landing_carousel_slides` | `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | วันเวลาที่แก้ไขสไลด์ล่าสุด | 
 | `pr_news_articles` | `article_id` | `SERIAL / INT` | `PK` | รหัสข่าวประชาสัมพันธ์ | 
 | `pr_news_articles` | `title` | `VARCHAR(255)` | `NOT NULL` | หัวข้อข่าวสารหรือกิจกรรมกองทุนทุนการศึกษา | 
@@ -271,10 +277,13 @@ CREATE TABLE donations (
     transfer_time TIME NOT NULL,
     slip_file_path VARCHAR(500) NOT NULL,
     slip_file_hash CHAR(64),
-    verification_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
-        CHECK (verification_status IN ('PENDING', 'APPROVED', 'REJECTED')),
-    verified_by INT REFERENCES admin_users(user_id),
-    verified_at TIMESTAMPTZ,
+    verification_status VARCHAR(30) NOT NULL DEFAULT 'PENDING_SLIP_CHECK'
+        CHECK (verification_status IN ('PENDING_SLIP_CHECK', 'WAITING_TREASURY_RD', 'COMPLETED_RD', 'REJECTED')),
+    slip_verified_by INT REFERENCES admin_users(user_id),
+    slip_verified_at TIMESTAMPTZ,
+    rd_submitted_by INT REFERENCES admin_users(user_id),
+    rd_submitted_at TIMESTAMPTZ,
+    rd_confirm_email_sent_at TIMESTAMPTZ,
     rejection_reason TEXT,
     edonation_sla_due_date DATE GENERATED ALWAYS AS (transfer_date + INTERVAL '14 days') STORED,
     edonation_export_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
@@ -406,6 +415,22 @@ CREATE TABLE landing_carousel_slides (
 
 CREATE INDEX idx_carousel_active_order ON landing_carousel_slides(is_active, display_order ASC);
 
+-- 11. ตารางแจ้งเตือนเจ้าหน้าที่ Admin เมื่อมีผู้บริจาคแนบสลิปใหม่ (admin_notifications)
+CREATE TABLE admin_notifications (
+    notification_id BIGSERIAL PRIMARY KEY,
+    donation_id UUID NOT NULL REFERENCES donations(donation_id) ON DELETE CASCADE,
+    notify_type VARCHAR(50) NOT NULL DEFAULT 'NEW_SLIP_UPLOADED',
+    title VARCHAR(255) NOT NULL,
+    channel_sent VARCHAR(50) NOT NULL DEFAULT 'WEB,EMAIL',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    read_by INT REFERENCES admin_users(user_id),
+    read_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_admin_notifications_unread ON admin_notifications(is_read, created_at DESC);
+
+
 
 ```
 
@@ -442,6 +467,7 @@ LEFT JOIN acknowledgement_certificates c ON d.donation_id = c.donation_id
 WHERE d.verification_status = 'APPROVED'
   AND d.need_tax_deduction = TRUE
 ORDER BY d.transfer_date ASC, d.transfer_time ASC;
+
 
 
 ```

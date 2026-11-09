@@ -104,8 +104,29 @@
           </button>
         </nav>
 
-        <!-- Role Switcher (Donor vs Admin/พี่บอม) -->
-        <div class="flex items-center gap-2">
+        <!-- Role Switcher & Admin Notification Bell -->
+        <div class="flex items-center gap-2 relative">
+          <button id="adminNotifBellBtn" type="button" class="relative p-2.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 text-white transition" title="แจ้งเตือนรายการแนบสลิปใหม่สำหรับ Admin">
+            <span>🔔</span>
+            <span id="adminNotifCountBadge" class="absolute -top-1.5 -right-1.5 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow">2</span>
+          </button>
+
+          <!-- Notification Dropdown Panel -->
+          <div id="adminNotifDropdown" class="hidden absolute right-0 top-14 w-80 sm:w-96 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-4 z-50 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span class="font-bold text-xs sm:text-sm text-slate-900">🔔 แจ้งเตือนฝั่ง Admin (รายการแนบสลิป/กองคลัง)</span>
+              <button type="button" id="markAllNotifReadBtn" class="text-[11px] text-sky-700 hover:underline font-semibold">อ่านทั้งหมดแล้ว</button>
+            </div>
+            <div id="adminNotifList" class="max-h-64 overflow-y-auto space-y-2 text-xs">
+              <!-- Populated by JS -->
+            </div>
+            <div class="pt-2 border-t border-slate-100 text-right">
+              <button type="button" id="notifGoToAdminBtn" class="text-xs font-bold text-sky-700 hover:text-sky-900">
+                ไปที่หน้าตรวจสอบธุรกรรม Admin →
+              </button>
+            </div>
+          </div>
+
           <button id="toggleAdminBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-amber-300/60 bg-amber-400/20 text-amber-100 hover:bg-amber-400/30 transition flex items-center gap-2 shadow-sm">
             <span class="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
             <span id="toggleAdminLabel">ระบบหลังบ้าน (Admin / พี่บอม)</span>
@@ -333,34 +354,39 @@
       <!-- Workflow Overview Diagram (5 Steps) -->
       <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
         <div>
-          <span class="text-xs font-semibold uppercase tracking-wider text-sky-700">ขั้นตอนการบริจาคออนไลน์ (Donation Workflow)</span>
-          <h2 class="text-lg sm:text-xl font-bold text-slate-900 mt-1">บริจาคง่ายใน 5 ขั้นตอน พร้อมรับใบอนุโมทนาบัตร</h2>
+          <span class="text-xs font-semibold uppercase tracking-wider text-sky-700">ขั้นตอนการบริจาคและอนุมัติ 2 ขั้นตอน (Updated 2-Stage Workflow)</span>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900 mt-1">ตั้งแต่วินาทีที่ผู้บริจาคแนบสลิป จนถึงส่งข้อมูลกรมสรรพากรเสร็จสมบูรณ์</h2>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
           <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
             <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-700 text-white text-xs font-bold">1</span>
-            <h4 class="font-bold text-sm text-slate-900">เลือกวัตถุประสงค์</h4>
-            <p class="text-xs text-slate-600">เลือกทุนที่คณะจัดสรรให้ หรือระบุชื่อนิสิตผู้รับทุน</p>
+            <h4 class="font-bold text-sm text-slate-900">โอนเงิน & แนบสลิป</h4>
+            <p class="text-xs text-slate-600">ผู้บริจาคโอนเงิน กรอกชื่อ เลขผู้เสียภาษี 13 หลัก และแนบสลิป</p>
           </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-700 text-white text-xs font-bold">2</span>
-            <h4 class="font-bold text-sm text-slate-900">ระบุยอด & ประเภทผู้บริจาค</h4>
-            <p class="text-xs text-slate-600">เลือกยอดเงิน และระบุบุคคลธรรมดาหรือนิติบุคคล</p>
+          <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1.5">
+            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-600 text-white text-xs font-bold">2</span>
+            <h4 class="font-bold text-sm text-slate-900">แจ้งเตือน Admin ทันที</h4>
+            <p class="text-xs text-slate-600">ระบบแจ้งเตือน Admin ว่ามีผู้บริจาคแนบสลิปใหม่เข้ามา</p>
           </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+          <div class="p-4 rounded-2xl bg-sky-50/70 border border-sky-200 space-y-1.5">
             <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-700 text-white text-xs font-bold">3</span>
-            <h4 class="font-bold text-sm text-slate-900">ชำระเงินผ่าน QR</h4>
-            <p class="text-xs text-slate-600">สแกน QR Payment หรือโอนผ่านธนาคารที่รองรับทุกธนาคาร</p>
+            <h4 class="font-bold text-sm text-slate-900">อนุมัติครั้งที่ 1 (ตรวจสลิป)</h4>
+            <p class="text-xs text-slate-600">ตรวจชื่อ-สลิป-เลขภาษีตรงกับ Book Bank และส่งใบอนุโมทนาบัตรทางเมล</p>
           </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-700 text-white text-xs font-bold">4</span>
-            <h4 class="font-bold text-sm text-slate-900">ยืนยัน & แนบสลิปโอน</h4>
-            <p class="text-xs text-slate-600">กรอกเลขผู้เสียภาษี ชื่อ-สกุล วันเวลาที่โอน และแนบสลิป</p>
+          <div class="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-1.5">
+            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-purple-700 text-white text-xs font-bold">4</span>
+            <h4 class="font-bold text-sm text-slate-900">รอยืนยันจากกองคลัง</h4>
+            <p class="text-xs text-slate-600">เปลี่ยนสถานะเป็น "รอยืนยันกองคลัง" เพื่อเตรียมข้อมูลทำภาษี</p>
           </div>
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-700 text-white text-xs font-bold">5</span>
-            <h4 class="font-bold text-sm text-slate-900">รับใบอนุโมทนาบัตร</h4>
-            <p class="text-xs text-slate-600">ดาวน์โหลด PDF หรือรับทางอีเมล และรับ e-Donation ใน 2 สัปดาห์</p>
+          <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1.5">
+            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-700 text-white text-xs font-bold">5</span>
+            <h4 class="font-bold text-sm text-slate-900">คีย์ระบบ e-Donation</h4>
+            <p class="text-xs text-slate-600">นำชื่อและเลขผู้เสียภาษีกรอกลงระบบ e-Donation ของกรมสรรพากร</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-1.5">
+            <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600 text-white text-xs font-bold">6</span>
+            <h4 class="font-bold text-sm text-slate-900">อนุมัติครั้งที่ 2 (ส่งเมลยืนยัน)</h4>
+            <p class="text-xs text-slate-600">กดอนุมัติครั้งที่ 2 เพื่อส่งอีเมลแจ้งผู้บริจาคว่าส่งสรรพากรเรียบร้อยแล้ว</p>
           </div>
         </div>
       </div>
@@ -1086,27 +1112,36 @@
         </div>
       </div>
 
-      <!-- KPI Summary Cards -->
+      <!-- KPI Summary Cards (Updated for 2-Stage Approval Workflow) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
           <p class="text-xs font-semibold text-slate-500">ยอดบริจาคสะสมทั้งหมด</p>
           <p id="adminKpiTotalAmount" class="text-2xl font-bold text-slate-900 mt-1">148,500 บาท</p>
-          <p class="text-[11px] text-emerald-700 font-medium mt-1">รวมทั้ง 2 วัตถุประสงค์ทุนการศึกษา</p>
+          <p class="text-[11px] text-slate-500 font-medium mt-1">ทุนระบุชื่อนิสิต: <strong id="adminKpiSpecificCount">2 รายการ</strong></p>
         </div>
-        <div class="bg-white rounded-2xl p-5 border border-amber-200 shadow-sm">
-          <p class="text-xs font-semibold text-amber-800">รอตรวจสอบสลิปโอนเงิน</p>
+        <div class="bg-white rounded-2xl p-5 border-2 border-amber-300 bg-amber-50/30 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-amber-900">ขั้นที่ 1: รอตรวจสลิป & Book Bank</p>
+            <span class="px-2 py-0.5 rounded bg-amber-200 text-amber-900 text-[10px] font-bold">อนุมัติครั้งที่ 1</span>
+          </div>
           <p id="adminKpiPendingCount" class="text-2xl font-bold text-amber-600 mt-1">2 รายการ</p>
-          <p class="text-[11px] text-slate-500 mt-1">กดตรวจสอบสลิปเพื่อออกเลขใบอนุโมทนาบัตร</p>
+          <p class="text-[11px] text-slate-600 mt-1">ตรวจชื่อ-สลิป-เลขภาษี แล้วกดส่งใบอนุโมทนาบัตรทางเมล</p>
         </div>
-        <div class="bg-white rounded-2xl p-5 border border-emerald-200 shadow-sm">
-          <p class="text-xs font-semibold text-emerald-800">อนุมัติแล้ว / พร้อมทำ e-Donation</p>
-          <p id="adminKpiApprovedCount" class="text-2xl font-bold text-emerald-700 mt-1">3 รายการ</p>
-          <p class="text-[11px] text-slate-500 mt-1">พร้อมส่งออกไฟล์ Excel ให้พี่บอม</p>
+        <div class="bg-white rounded-2xl p-5 border-2 border-sky-300 bg-sky-50/30 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-sky-900">ขั้นที่ 2: รอยืนยันกองคลัง / คีย์สรรพากร</p>
+            <span class="px-2 py-0.5 rounded bg-sky-200 text-sky-900 text-[10px] font-bold">อนุมัติครั้งที่ 2</span>
+          </div>
+          <p id="adminKpiWaitingRdCount" class="text-2xl font-bold text-sky-700 mt-1">1 รายการ</p>
+          <p class="text-[11px] text-slate-600 mt-1">ส่งใบอนุโมทนาบัตรแล้ว • รอกรอกระบบ e-Donation กรมสรรพากร</p>
         </div>
-        <div class="bg-white rounded-2xl p-5 border border-purple-200 shadow-sm">
-          <p class="text-xs font-semibold text-purple-800">ทุนระบุชื่อนิสิตผู้รับทุน</p>
-          <p id="adminKpiSpecificCount" class="text-2xl font-bold text-purple-700 mt-1">2 รายการ</p>
-          <p class="text-[11px] text-slate-500 mt-1">แยกแสดงรายชื่อนิสิตในไฟล์ Excel</p>
+        <div class="bg-white rounded-2xl p-5 border-2 border-emerald-300 bg-emerald-50/30 shadow-sm">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-bold text-emerald-900">เสร็จสมบูรณ์: ส่งสรรพากรเรียบร้อย</p>
+            <span class="px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 text-[10px] font-bold">ส่งเมลยืนยันแล้ว</span>
+          </div>
+          <p id="adminKpiApprovedCount" class="text-2xl font-bold text-emerald-700 mt-1">2 รายการ</p>
+          <p class="text-[11px] text-slate-600 mt-1">ส่งเมลยืนยันการนำส่งข้อมูลกรมสรรพากรให้ผู้บริจาคแล้ว</p>
         </div>
       </div>
 
@@ -1187,9 +1222,10 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <select id="adminStatusFilter" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-medium bg-white">
-              <option value="all">สถานะ: ทั้งหมด</option>
-              <option value="pending">รอตรวจสอบสลิป</option>
-              <option value="approved">อนุมัติแล้ว</option>
+              <option value="all">สถานะ: ทั้งหมด (ทุกขั้นตอน)</option>
+              <option value="pending">1. รอตรวจสลิป / เทียบ Book Bank</option>
+              <option value="waiting_rd">2. รอยืนยันกองคลัง / รอคีย์ e-Donation</option>
+              <option value="completed_rd">3. ส่งกรมสรรพากรเรียบร้อยแล้ว</option>
             </select>
             <select id="adminPurposeFilter" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-medium bg-white">
               <option value="all">วัตถุประสงค์: ทั้งหมด</option>
@@ -1254,7 +1290,11 @@
             <span id="modalSlipTaxId" class="font-mono font-semibold text-slate-900">-</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-slate-500">ผู้รับเงิน:</span>
+            <span class="text-slate-500">อีเมลผู้บริจาค:</span>
+            <span id="modalSlipEmail" class="font-semibold text-sky-800">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">ผู้รับเงิน (Book Bank):</span>
             <span class="font-semibold text-slate-900">กองทุนคณะแพทยศาสตร์ ม.พะเยา</span>
           </div>
           <div class="flex justify-between pt-2 border-t border-sky-200/70 text-sm">
@@ -1264,9 +1304,17 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-2 pt-2">
-        <button type="button" id="modalApproveBtn" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition">
-          ✓ อนุมัติยอดเงินและออกเลขใบอนุโมทนาบัตร
+      <!-- 2-Stage Approval Progress Box inside Modal -->
+      <div id="modalWorkflowProgressBox" class="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-xs">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2 pt-2">
+        <button type="button" id="modalApproveBtn" class="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-semibold text-xs transition">
+          ✓ อนุมัติครั้งที่ 1 (ตรวจสลิปตรง Book Bank & ส่งใบอนุโมทนาบัตรทางเมล)
+        </button>
+        <button type="button" id="modalApproveStage2Btn" class="hidden px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition">
+          ✓ อนุมัติครั้งที่ 2 (คีย์ e-Donation สรรพากรแล้ว & ส่งเมลยืนยัน)
         </button>
         <button type="button" id="closeSlipModalFooterBtn" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
           ปิดหน้าต่าง
@@ -1361,6 +1409,22 @@
         slipFilename: 'slip_transfer_sample.jpg',
         activeDonationId: 'MEDUP-20261026-004',
         modalTargetId: null,
+        notifications: [
+          {
+            id: 'NOTIF-1',
+            txId: 'MEDUP-20261026-005',
+            message: 'นพ. กิตติพงศ์ เจริญเวช แนบสลิปโอนเงิน 1,000.00 บาท (รอตรวจสลิป/Book Bank)',
+            time: '11:30 น.',
+            read: false
+          },
+          {
+            id: 'NOTIF-2',
+            txId: 'MEDUP-20261025-004',
+            message: 'คุณ ธนากร รุ่งเรืองกิจ แนบสลิปโอนเงิน 12,500.00 บาท (รอตรวจสลิป/Book Bank)',
+            time: 'เมื่อวาน 18:05 น.',
+            read: false
+          }
+        ],
         transactions: [
           {
             id: 'MEDUP-20261020-001',
@@ -1377,7 +1441,9 @@
             purposeLabel: 'ทุนการศึกษาสำหรับนิสิตแพทย์ที่ขาดแคลนทุนทรัพย์ (คณะจัดสรรให้กับนิสิต)',
             studentName: '-',
             amount: 50000,
-            status: 'approved',
+            status: 'completed_rd',
+            mail1Sent: true,
+            mail2Sent: true,
             slipFile: 'slip_001.jpg'
           },
           {
@@ -1395,7 +1461,9 @@
             purposeLabel: 'ทุนการศึกษาสำหรับนิสิตแพทย์ที่ขาดแคลนทุนทรัพย์ (ระบุชื่อนิสิตผู้รับทุน)',
             studentName: 'นศพ. กมลชนก ใจดี (รหัส 66070112 ชั้นปีที่ 3)',
             amount: 60000,
-            status: 'approved',
+            status: 'completed_rd',
+            mail1Sent: true,
+            mail2Sent: true,
             slipFile: 'slip_002.jpg'
           },
           {
@@ -1413,7 +1481,9 @@
             purposeLabel: 'ทุนการศึกษาสำหรับนิสิตแพทย์ที่ขาดแคลนทุนทรัพย์ (คณะจัดสรรให้กับนิสิต)',
             studentName: '-',
             amount: 25000,
-            status: 'approved',
+            status: 'waiting_rd',
+            mail1Sent: true,
+            mail2Sent: false,
             slipFile: 'slip_003.jpg'
           },
           {
@@ -1432,6 +1502,8 @@
             studentName: 'นศพ. ธีรภัทร สายบุญ (รหัส 67070208 ชั้นปีที่ 2)',
             amount: 12500,
             status: 'pending',
+            mail1Sent: false,
+            mail2Sent: false,
             slipFile: 'slip_004.jpg'
           },
           {
@@ -1450,6 +1522,8 @@
             studentName: '-',
             amount: 1000,
             status: 'pending',
+            mail1Sent: false,
+            mail2Sent: false,
             slipFile: 'slip_005.jpg'
           }
         ]
@@ -1674,16 +1748,18 @@
         const dateEl = document.getElementById('certDate');
         const quickApproveBtn = document.getElementById('simulateAdminApproveQuickBtn');
 
-        if (tx.status === 'approved' && tx.docNumber) {
+        if ((tx.status === 'waiting_rd' || tx.status === 'completed_rd') && tx.docNumber) {
           statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800';
-          statusBadge.textContent = '✓ ยืนยันยอดโอนและออกเลขที่เอกสารแล้ว';
+          statusBadge.textContent = tx.status === 'completed_rd'
+            ? '✓ ส่งใบอนุโมทนาบัตร & ส่งข้อมูลกรมสรรพากรเรียบร้อยแล้ว'
+            : '✓ อนุมัติครั้งที่ 1: ส่งใบอนุโมทนาบัตรทางเมลแล้ว (รอยืนยันกองคลัง/ส่งสรรพากร)';
           docNumberEl.className = 'font-bold text-emerald-700 text-right';
           docNumberEl.textContent = tx.docNumber + ' (อ้างอิง: ' + tx.id + ')';
           dateEl.textContent = formatThaiDate(tx.transferDate) + ' เวลา ' + tx.transferTime + ' น.';
           if (quickApproveBtn) quickApproveBtn.classList.add('hidden');
         } else {
           statusBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800';
-          statusBadge.textContent = 'รอยืนยันธุรกรรมจากเจ้าหน้าที่';
+          statusBadge.textContent = 'รอ Admin ตรวจสลิปเทียบ Book Bank (อนุมัติครั้งที่ 1)';
           docNumberEl.className = 'font-semibold text-amber-700 text-right';
           docNumberEl.textContent = 'รอระบบออกเลขที่ (อ้างอิง: ' + tx.id + ')';
           dateEl.textContent = formatThaiDate(tx.transferDate) + ' (รอยืนยันธุรกรรม)';
@@ -1691,16 +1767,61 @@
         }
       }
 
-      // Render Admin Dashboard & Table
+      // Render Admin Notifications Bell & Dropdown
+      function renderAdminNotifications() {
+        const unreadCount = state.notifications.filter(function(n) { return !n.read; }).length;
+        const badge = document.getElementById('adminNotifCountBadge');
+        if (badge) {
+          badge.textContent = unreadCount;
+          if (unreadCount > 0) {
+            badge.classList.remove('hidden');
+          } else {
+            badge.classList.add('hidden');
+          }
+        }
+
+        const listEl = document.getElementById('adminNotifList');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        if (state.notifications.length === 0) {
+          listEl.innerHTML = '<div class="py-4 text-center text-slate-400">ไม่มีรายการแจ้งเตือนใหม่</div>';
+          return;
+        }
+
+        state.notifications.forEach(function(item) {
+          const div = document.createElement('div');
+          div.className = 'p-2.5 rounded-xl border transition cursor-pointer ' + (item.read ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-amber-50/70 border-amber-300 text-slate-900 font-medium');
+          div.innerHTML =
+            '<div class="flex items-center justify-between text-[11px] text-slate-500 mb-0.5">' +
+              '<span class="font-mono font-bold text-sky-800">' + item.txId + '</span>' +
+              '<span>' + item.time + '</span>' +
+            '</div>' +
+            '<div>' + item.message + '</div>';
+          div.addEventListener('click', function() {
+            item.read = true;
+            renderAdminNotifications();
+            document.getElementById('adminNotifDropdown').classList.add('hidden');
+            switchView('admin');
+            openSlipModal(item.txId);
+          });
+          listEl.appendChild(div);
+        });
+      }
+
+      // Render Admin Dashboard & Table (2-Stage Approval Workflow)
       function renderAdminDashboard() {
         const totalAmount = state.transactions.reduce(function(sum, t) { return sum + Number(t.amount || 0); }, 0);
         const pendingList = state.transactions.filter(function(t) { return t.status === 'pending'; });
-        const approvedList = state.transactions.filter(function(t) { return t.status === 'approved'; });
+        const waitingRdList = state.transactions.filter(function(t) { return t.status === 'waiting_rd'; });
+        const completedRdList = state.transactions.filter(function(t) { return t.status === 'completed_rd'; });
         const specificList = state.transactions.filter(function(t) { return t.purposeCode === 'specific'; });
 
         document.getElementById('adminKpiTotalAmount').textContent = formatMoneyShort(totalAmount) + ' บาท';
         document.getElementById('adminKpiPendingCount').textContent = pendingList.length + ' รายการ';
-        document.getElementById('adminKpiApprovedCount').textContent = approvedList.length + ' รายการ';
+        const waitingEl = document.getElementById('adminKpiWaitingRdCount');
+        if (waitingEl) waitingEl.textContent = waitingRdList.length + ' รายการ';
+        document.getElementById('adminKpiApprovedCount').textContent = completedRdList.length + ' รายการ';
         document.getElementById('adminKpiSpecificCount').textContent = specificList.length + ' รายการ';
 
         // Filter Table
@@ -1720,22 +1841,43 @@
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50 transition';
 
-          const statusHtml = tx.status === 'approved'
-            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">อนุมัติแล้ว</span>'
-            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">รอตรวจสลิป</span>';
+          let statusHtml = '';
+          let approveActionHtml = '';
+
+          if (tx.status === 'pending') {
+            statusHtml =
+              '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">1. รอตรวจสลิป / Book Bank</span>' +
+              '<div class="text-[10px] text-slate-500 mt-0.5">ยังไม่ส่งใบอนุโมทนาบัตร</div>';
+            approveActionHtml =
+              '<button type="button" data-approve-id="' + tx.id + '" class="admin-approve-btn px-2.5 py-1.5 rounded-lg bg-sky-700 hover:bg-sky-800 text-white text-xs font-semibold transition shadow-sm">' +
+                'อนุมัติครั้งที่ 1 (ส่งใบอนุโมทนาบัตร)' +
+              '</button>';
+          } else if (tx.status === 'waiting_rd') {
+            statusHtml =
+              '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">2. รอยืนยันกองคลัง / รอคีย์สรรพากร</span>' +
+              '<div class="text-[10px] text-emerald-700 font-medium mt-0.5">✉️ ส่งเมลใบอนุโมทนาบัตรแล้ว</div>';
+            approveActionHtml =
+              '<button type="button" data-approve-rd-id="' + tx.id + '" class="admin-approve-rd-btn px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-sm">' +
+                'อนุมัติครั้งที่ 2 (ส่งสรรพากรแล้ว)' +
+              '</button>';
+          } else {
+            statusHtml =
+              '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">3. ส่งกรมสรรพากรเรียบร้อยแล้ว</span>' +
+              '<div class="text-[10px] text-emerald-700 font-medium mt-0.5">✉️ ส่งเมลยืนยันครบ 2 ฉบับแล้ว</div>';
+            approveActionHtml =
+              '<button type="button" data-view-cert-id="' + tx.id + '" class="admin-view-cert-btn px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">' +
+                'ดูใบอนุโมทนาบัตร' +
+              '</button>';
+          }
 
           const purposeShort = tx.purposeCode === 'specific'
             ? '<span class="font-semibold text-purple-800">ระบุชื่อนิสิต:</span> ' + tx.studentName
             : '<span class="text-slate-700">คณะจัดสรรให้กับนิสิต</span>';
 
-          const approveActionHtml = tx.status === 'pending'
-            ? '<button type="button" data-approve-id="' + tx.id + '" class="admin-approve-btn px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">อนุมัติ</button>'
-            : '<button type="button" data-view-cert-id="' + tx.id + '" class="admin-view-cert-btn px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">ดูใบอนุโมทนาบัตร</button>';
-
           tr.innerHTML =
             '<td class="py-3 px-3">' +
               '<div class="font-bold text-slate-900">' + tx.id + '</div>' +
-              '<div class="text-[11px] text-slate-500">' + (tx.docNumber ? 'เลขที่: ' + tx.docNumber : 'ยังไม่ออกเลขที่เอกสาร') + '</div>' +
+              '<div class="text-[11px] text-slate-500">' + (tx.docNumber ? 'เลขที่: ' + tx.docNumber : 'รอออกเลขที่เมื่ออนุมัติครั้งที่ 1') + '</div>' +
             '</td>' +
             '<td class="py-3 px-3 whitespace-nowrap">' +
               '<div>' + tx.transferDate + '</div>' +
@@ -1743,15 +1885,15 @@
             '</td>' +
             '<td class="py-3 px-3">' +
               '<div class="font-semibold text-slate-900">' + tx.prefix + ' ' + tx.name + '</div>' +
-              '<div class="text-[11px] text-slate-500">' + tx.donorType + ' • ' + tx.phone + '</div>' +
+              '<div class="text-[11px] text-slate-500">' + tx.donorType + ' • ' + tx.email + '</div>' +
             '</td>' +
-            '<td class="py-3 px-3 font-mono text-xs">' + tx.taxId + '</td>' +
+            '<td class="py-3 px-3 font-mono text-xs font-semibold text-slate-800">' + tx.taxId + '</td>' +
             '<td class="py-3 px-3 max-w-xs">' + purposeShort + '</td>' +
             '<td class="py-3 px-3 text-right font-bold text-slate-900 whitespace-nowrap">' + formatMoney(tx.amount) + '</td>' +
             '<td class="py-3 px-3 text-center whitespace-nowrap">' + statusHtml + '</td>' +
             '<td class="py-3 px-3 text-center whitespace-nowrap">' +
               '<div class="flex items-center justify-center gap-1.5">' +
-                '<button type="button" data-slip-id="' + tx.id + '" class="admin-slip-btn px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-semibold transition">ดูสลิป</button>' +
+                '<button type="button" data-slip-id="' + tx.id + '" class="admin-slip-btn px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-semibold transition">ตรวจสลิป</button>' +
                 approveActionHtml +
               '</div>' +
             '</td>';
@@ -1769,6 +1911,12 @@
         tbody.querySelectorAll('.admin-approve-btn').forEach(function(btn) {
           btn.addEventListener('click', function() {
             approveTransactionById(btn.getAttribute('data-approve-id'));
+          });
+        });
+
+        tbody.querySelectorAll('.admin-approve-rd-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            approveStage2RdById(btn.getAttribute('data-approve-rd-id'));
           });
         });
 
@@ -1829,20 +1977,21 @@
         });
       }
 
-      // Approve a Transaction & Issue Official Document Number
+      // Stage 1 Approval: Verify Name, Slip, Tax ID with Book Bank -> Send e-Acknowledgement PDF via Email -> Set status to waiting_rd
       function approveTransactionById(txId) {
         const tx = state.transactions.find(function(t) { return t.id === txId; });
         if (!tx) return;
-        if (tx.status === 'approved') {
-          showToast('รายการนี้ได้รับการอนุมัติแล้ว', 'warning');
+        if (tx.status !== 'pending') {
+          showToast('รายการนี้ผ่านการอนุมัติครั้งที่ 1 ไปแล้ว', 'warning');
           return;
         }
-        const approvedCount = state.transactions.filter(function(t) { return t.status === 'approved'; }).length + 1;
-        const padded = String(approvedCount).padStart(4, '0');
-        tx.status = 'approved';
+        const issuedCount = state.transactions.filter(function(t) { return t.docNumber !== ''; }).length + 1;
+        const padded = String(issuedCount).padStart(4, '0');
+        tx.status = 'waiting_rd';
         tx.docNumber = 'MEDUP-69/' + padded;
+        tx.mail1Sent = true;
 
-        showToast('อนุมัติรายการ ' + tx.id + ' และออกเลขที่ใบอนุโมทนาบัตร ' + tx.docNumber + ' เรียบร้อยแล้ว');
+        showToast('อนุมัติครั้งที่ 1 สำเร็จ! ส่งใบอนุโมทนาบัตร (' + tx.docNumber + ') ไปยังอีเมล ' + tx.email + ' แล้ว • สถานะเปลี่ยนเป็น "รอยืนยันจากกองคลัง"');
 
         if (state.currentView === 'admin') {
           renderAdminDashboard();
@@ -1851,7 +2000,27 @@
         }
       }
 
-      // Open Transfer Slip Verification Modal
+      // Stage 2 Approval: Treasury confirmed & keyed into Revenue Dept e-Donation -> Send 2nd Email confirming RD submission
+      function approveStage2RdById(txId) {
+        const tx = state.transactions.find(function(t) { return t.id === txId; });
+        if (!tx) return;
+        if (tx.status === 'completed_rd') {
+          showToast('รายการนี้ส่งกรมสรรพากรเรียบร้อยแล้ว', 'warning');
+          return;
+        }
+        tx.status = 'completed_rd';
+        tx.mail2Sent = true;
+
+        showToast('อนุมัติครั้งที่ 2 สำเร็จ! ส่งอีเมลยืนยันการนำส่งข้อมูล e-Donation กรมสรรพากรไปยัง ' + tx.email + ' เรียบร้อยแล้ว');
+
+        if (state.currentView === 'admin') {
+          renderAdminDashboard();
+        } else if (state.currentView === 'certificate') {
+          renderCertificateView();
+        }
+      }
+
+      // Open Transfer Slip & 2-Stage Verification Modal
       function openSlipModal(txId) {
         const tx = state.transactions.find(function(t) { return t.id === txId; });
         if (!tx) return;
@@ -1861,13 +2030,34 @@
         document.getElementById('modalSlipDateTime').textContent = tx.transferDate + ' เวลา ' + tx.transferTime + ' น.';
         document.getElementById('modalSlipDonor').textContent = tx.prefix + ' ' + tx.name;
         document.getElementById('modalSlipTaxId').textContent = tx.taxId;
+        const emailEl = document.getElementById('modalSlipEmail');
+        if (emailEl) emailEl.textContent = tx.email;
         document.getElementById('modalSlipAmount').textContent = formatMoney(tx.amount) + ' บาท';
 
-        const approveBtn = document.getElementById('modalApproveBtn');
-        if (tx.status === 'approved') {
-          approveBtn.classList.add('hidden');
+        const progressBox = document.getElementById('modalWorkflowProgressBox');
+        const approveBtn1 = document.getElementById('modalApproveBtn');
+        const approveBtn2 = document.getElementById('modalApproveStage2Btn');
+
+        if (tx.status === 'pending') {
+          progressBox.innerHTML =
+            '<div class="font-bold text-amber-900">📌 ขั้นตอนปัจจุบัน: รอ Admin อนุมัติครั้งที่ 1 (ตรวจสลิปเทียบ Book Bank)</div>' +
+            '<p class="text-slate-600">กรุณาตรวจสอบ ชื่อผู้บริจาค ยอดเงินในสลิป และเลขประจำตัวผู้เสียภาษี 13 หลัก ว่าถูกต้องตรงกับสมุดบัญชีธนาคาร (Book Bank) เมื่อกดอนุมัติครั้งที่ 1 ระบบจะส่ง <strong>ใบอนุโมทนาบัตร (PDF)</strong> ไปทางอีเมลผู้บริจาคทันที และเปลี่ยนสถานะเป็น <strong>"รอยืนยันจากกองคลัง"</strong></p>';
+          approveBtn1.classList.remove('hidden');
+          approveBtn2.classList.add('hidden');
+        } else if (tx.status === 'waiting_rd') {
+          progressBox.innerHTML =
+            '<div class="font-bold text-sky-900">📌 ขั้นตอนปัจจุบัน: รอยืนยันจากกองคลัง & กรอกระบบ e-Donation กรมสรรพากร</div>' +
+            '<p class="text-emerald-700 font-semibold">✓ อนุมัติครั้งที่ 1 แล้ว: ส่งใบอนุโมทนาบัตร (' + tx.docNumber + ') ไปยัง ' + tx.email + ' เรียบร้อยแล้ว</p>' +
+            '<p class="text-slate-600">เมื่อกองคลังยืนยันยอดและนำ ชื่อ + เลขผู้เสียภาษี (' + tx.taxId + ') กรอกลงระบบ e-Donation ของกรมสรรพากรเรียบร้อยแล้ว ให้กด <strong>"อนุมัติครั้งที่ 2"</strong> เพื่อส่งอีเมลแจ้งยืนยันผู้บริจาค</p>';
+          approveBtn1.classList.add('hidden');
+          approveBtn2.classList.remove('hidden');
         } else {
-          approveBtn.classList.remove('hidden');
+          progressBox.innerHTML =
+            '<div class="font-bold text-emerald-900">✅ ดำเนินการครบทั้ง 2 ขั้นตอนเรียบร้อยแล้ว</div>' +
+            '<p class="text-emerald-700">1. ส่งเมลใบอนุโมทนาบัตร (' + tx.docNumber + ') เรียบร้อยแล้ว</p>' +
+            '<p class="text-emerald-700">2. ยืนยันจากกองคลัง คีย์ระบบ e-Donation กรมสรรพากร และส่งเมลยืนยันให้ผู้บริจาคเรียบร้อยแล้ว</p>';
+          approveBtn1.classList.add('hidden');
+          approveBtn2.classList.add('hidden');
         }
 
         document.getElementById('slipModal').classList.remove('hidden');
@@ -1884,7 +2074,7 @@
         const filterMode = filterEl ? filterEl.value : 'all';
 
         const rowsToExport = state.transactions.filter(function(tx) {
-          if (filterMode === 'approved') return tx.status === 'approved';
+          if (filterMode === 'approved') return tx.status === 'waiting_rd' || tx.status === 'completed_rd';
           return true;
         });
 
@@ -1924,7 +2114,7 @@
             '"' + (tx.studentName || '-').replace(/"/g, '""') + '"',
             '"' + tx.phone + '"',
             '"' + tx.email + '"',
-            '"' + (tx.status === 'approved' ? 'อนุมัติแล้ว' : 'รอตรวจสอบสลิป') + '"'
+            '"' + (tx.status === 'completed_rd' ? 'ส่งสรรพากรเรียบร้อยแล้ว' : (tx.status === 'waiting_rd' ? 'ตรวจสลิปแล้ว-รอยืนยันกองคลัง/คีย์สรรพากร' : 'รอตรวจสลิป/Book Bank')) + '"'
           ];
           csvLines.push(cols.join(','));
         });
@@ -2453,10 +2643,22 @@
             slipFile: state.slipFilename
           };
 
+          newTx.mail1Sent = false;
+          newTx.mail2Sent = false;
           state.transactions.push(newTx);
           state.activeDonationId = newId;
 
-          showToast('บันทึกข้อมูลการบริจาคสำเร็จ! เลขอ้างอิง: ' + newId);
+          // Push instant notification to Admin
+          state.notifications.unshift({
+            id: 'NOTIF-' + Date.now(),
+            txId: newId,
+            message: prefix + ' ' + name + ' แนบสลิปโอนเงิน ' + formatMoney(amount) + ' บาท (รอตรวจสลิปเทียบ Book Bank)',
+            time: 'เมื่อสักครู่',
+            read: false
+          });
+          renderAdminNotifications();
+
+          showToast('บันทึกข้อมูลสำเร็จ! ระบบส่งแจ้งเตือนไปยัง Admin เพื่อตรวจสอบสลิปและจัดส่งใบอนุโมทนาบัตรทางอีเมลแล้ว');
           switchView('certificate');
         });
 
@@ -2490,12 +2692,34 @@
         document.getElementById('exportExcelMainBtn').addEventListener('click', exportExcelForEdonation);
         document.getElementById('exportExcelSecondaryBtn').addEventListener('click', exportExcelForEdonation);
 
-        // Slip Modal Buttons
+        // Admin Notification Bell Listeners
+        document.getElementById('adminNotifBellBtn').addEventListener('click', function() {
+          const dd = document.getElementById('adminNotifDropdown');
+          dd.classList.toggle('hidden');
+        });
+        document.getElementById('markAllNotifReadBtn').addEventListener('click', function() {
+          state.notifications.forEach(function(n) { n.read = true; });
+          renderAdminNotifications();
+          showToast('ทำเครื่องหมายว่าอ่านแจ้งเตือนทั้งหมดแล้ว');
+        });
+        document.getElementById('notifGoToAdminBtn').addEventListener('click', function() {
+          document.getElementById('adminNotifDropdown').classList.add('hidden');
+          switchView('admin');
+          switchAdminSubTab('transactions');
+        });
+
+        // Slip Modal Buttons (Stage 1 & Stage 2 Approval)
         document.getElementById('closeSlipModalBtn').addEventListener('click', closeSlipModal);
         document.getElementById('closeSlipModalFooterBtn').addEventListener('click', closeSlipModal);
         document.getElementById('modalApproveBtn').addEventListener('click', function() {
           if (state.modalTargetId) {
             approveTransactionById(state.modalTargetId);
+            closeSlipModal();
+          }
+        });
+        document.getElementById('modalApproveStage2Btn').addEventListener('click', function() {
+          if (state.modalTargetId) {
+            approveStage2RdById(state.modalTargetId);
             closeSlipModal();
           }
         });
@@ -2677,6 +2901,7 @@
         renderHomePrNews();
         renderAdminPrNewsTable();
         renderAdminCarouselTable();
+        renderAdminNotifications();
       });
     })();
   </script>
