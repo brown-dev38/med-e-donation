@@ -124,7 +124,7 @@ export default function Home() {
       </main>
       <footer id="contact" className="site-footer">
         <div className="container footer-main"><div className="footer-brand"><Brand /><p>ให้โอกาสทางการศึกษา<br />สร้างอนาคตทางการแพทย์ไปด้วยกัน</p></div><div className="footer-links"><h3>สำรวจเว็บไซต์</h3><a href="#about">รู้จักกองทุน</a><a href="#funds">ทุนการศึกษา</a><a href="#how-to">ขั้นตอนการบริจาค</a><a href="#news">ข่าวสารและกิจกรรม</a><a href="#faq">คำถามที่พบบ่อย</a></div><div className="footer-contact"><h3>ติดต่อกองทุนทุนการศึกษา</h3><p><Icon name="pin" size={17} /><span>คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา<br />19 หมู่ 2 ต.แม่กา อ.เมืองพะเยา จ.พะเยา 56000</span></p><a href="tel:054466666"><Icon name="phone" size={16} /> 054-466-666 <span className="contact-extension">(งานทุนการศึกษา)</span></a><a href="mailto:medfund@up.ac.th"><Icon name="mail" size={17} /> medfund@up.ac.th</a></div></div>
-        <div className="container footer-bottom"><span>MED UP e-Donation · ระบบบริจาคทุนการศึกษาสำหรับนิสิตแพทย์</span><span>© 2026 คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา</span></div>
+        <div className="container footer-bottom"><span>MED UP e-Donation · ระบบบริจาคทุนการศึกษาสำหรับนิสิตแพทย์</span><a href="/login">เข้าสู่ระบบเจ้าหน้าที่</a><span>© 2026 คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา</span></div>
       </footer>
     </>
   );

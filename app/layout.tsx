@@ -10,7 +10,7 @@ const thaiFont = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "MED UP e-Donation | ให้โอกาสวันนี้ สร้างหมอที่ดีในวันข้างหน้า",
+  title: "MED e-Donation | ให้โอกาสวันนี้ สร้างหมอที่ดีในวันข้างหน้า",
   description: "ร่วมสนับสนุนทุนการศึกษานิสิตแพทย์ คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา ให้โอกาสทางการศึกษา เพื่อสร้างอนาคตทางการแพทย์ไปด้วยกัน",
 };
 
@@ -18,6 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
+      data-scroll-behavior="smooth"
       className={thaiFont.variable}
     >
       <body>{children}</body>
