@@ -4,7 +4,11 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     agentFeedback: true,
+    // Donation slips are up to 5 MB; leave room for multipart overhead and the other fields.
+    serverActions: { bodySizeLimit: "6mb" },
   },
+  // Node-only library used by the Excel export route; load it from node_modules instead of bundling.
+  serverExternalPackages: ["exceljs"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

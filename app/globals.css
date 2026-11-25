@@ -212,6 +212,16 @@ h2 { font-size: clamp(25px, 2.45vw, 34px); line-height: 1.65; font-weight: 550; 
 .footer-bottom > span:last-child { display: flex; align-items: center; gap: 7px; }
 @keyframes image-in { from { opacity: .5; } to { opacity: 1; } }
 
+/* PromptPay QR (donation form and admin settings) */
+.promptpay-qr { margin: 0; max-width: 100%; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid #d7e0e6; box-shadow: 0 6px 18px #0f2a3a12; text-align: center; }
+.promptpay-head { padding: 8px; background: #0f3d5e; color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; }
+.promptpay-head span { color: #8fd3ff; }
+.promptpay-code { padding: 10px; aspect-ratio: 1; display: grid; place-items: center; }
+.promptpay-code svg { display: block; width: 100%; height: auto; }
+.promptpay-loading { color: #6e7d73; font-size: 12px; }
+.promptpay-foot { display: block; padding: 0 0 10px; color: #0f3d5e; font-size: 12px; font-weight: 600; }
+.promptpay-invalid { color: #b0412b; font-size: 12px; }
+
 @media (min-width: 1450px) { .hero-inner { padding-block: 78px 88px; } .hero-photo { height: 480px; } }
 @media (max-width: 1100px) {
   .container { width: calc(100% - 64px); }

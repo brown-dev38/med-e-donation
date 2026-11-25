@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import FundNews from "./components/fund-news";
@@ -75,7 +76,7 @@ export default function Home() {
             <a href="#about" onClick={() => setMenuOpen(false)}>รู้จักกองทุน</a>
             <a href="#how-to" onClick={() => setMenuOpen(false)}>ขั้นตอนการบริจาค</a>
             <a href="#contact" onClick={() => setMenuOpen(false)}>ติดต่อเรา</a>
-            <a className="button button-small" href="#funds" onClick={() => setMenuOpen(false)}><Icon name="heart" size={17} /> ร่วมบริจาค</a>
+            <Link className="button button-small" href="/donate" onClick={() => setMenuOpen(false)}><Icon name="heart" size={17} /> ร่วมบริจาค</Link>
           </nav>
         </div>
       </header>
@@ -86,7 +87,7 @@ export default function Home() {
               <div className="eyebrow"><span className="status-dot" /> MEDICAL SCHOLARSHIP FUND</div>
               <h1 id="hero-title">ให้โอกาสวันนี้<br />สร้าง<span className="highlight">หมอที่ดี</span><br />ในวันข้างหน้า<span className="heading-period">.</span></h1>
               <p className="hero-description">ร่วมเติมเต็มความฝันให้นิสิตแพทย์ มหาวิทยาลัยพะเยา<br className="desktop-break" /> ด้วยทุนการศึกษาจากน้ำใจของคุณ เพื่อให้พวกเขา<br className="desktop-break" /> เติบโตเป็นหมอที่พร้อมกลับมาดูแลสังคม</p>
-              <div className="hero-actions"><a href="#funds" className="button"><Icon name="heart" size={19} /> ร่วมส่งต่อโอกาส <Icon name="arrow" size={18} /></a><a href="#about" className="text-link">รู้จักกองทุนของเรา <span aria-hidden="true">↗</span></a></div>
+              <div className="hero-actions"><Link href="/donate" className="button"><Icon name="heart" size={19} /> ร่วมส่งต่อโอกาส <Icon name="arrow" size={18} /></Link><a href="#about" className="text-link">รู้จักกองทุนของเรา <span aria-hidden="true">↗</span></a></div>
               <div className="hero-note"><Icon name="shield" size={16} /><span>บริจาคได้โดยไม่ต้องสมัครสมาชิก</span><span className="note-divider" /><span>รับใบอนุโมทนาบัตรทางอีเมล</span></div>
             </div>
             <div className="hero-visual">
@@ -110,8 +111,8 @@ export default function Home() {
           <div className="container">
             <div className="section-heading"><div><p className="section-label"><span /> CHOOSE YOUR IMPACT</p><h2 id="funds-title">เลือกให้…ในแบบที่คุณตั้งใจ</h2></div><p>ทุกน้ำใจมีปลายทางเดียวกัน<br />คืออนาคตที่ดีของนิสิตแพทย์</p></div>
             <div className="fund-grid">
-              <article className="fund-card"><div className="fund-photo"><Image src="/images/learning.jpeg" alt="ภาพประกอบนิสิตฝึกทักษะทางการแพทย์" fill sizes="(max-width: 760px) 90vw, 560px" /><span className="fund-tag">เติมโอกาสให้คนที่ต้องการ</span></div><div className="fund-body"><div className="fund-title-row"><span className="fund-icon"><Icon name="graduate" size={27} /></span><span className="fund-number">01 / GENERAL FUND</span></div><h3>ทุนการศึกษาเพื่อนิสิตแพทย์</h3><p>สมทบกองทุนส่วนกลาง เพื่อให้คณะกรรมการพิจารณาจัดสรรทุนแก่นิสิตแพทย์ที่ขาดแคลนทุนทรัพย์ ตามความจำเป็นและเกณฑ์ของคณะ</p><div className="fund-card-footer"><span><Icon name="check" size={15} /> คณะจัดสรรให้กับนิสิต</span><a href="#how-to" className="fund-link">ดูวิธีร่วมบริจาค <Icon name="arrow" size={18} /></a></div></div></article>
-              <article className="fund-card"><div className="fund-photo"><Image src="/images/scholarship.jpeg" alt="ภาพประกอบนิสิตแพทย์ผู้มุ่งมั่นในการศึกษา" fill sizes="(max-width: 760px) 90vw, 560px" /><span className="fund-tag">ส่งต่อกำลังใจให้คนที่คุณเลือก</span></div><div className="fund-body"><div className="fund-title-row"><span className="fund-icon peach"><Icon name="user" size={26} /></span><span className="fund-number">02 / PERSONAL SCHOLARSHIP</span></div><h3>ทุนการศึกษาแบบระบุผู้รับทุน</h3><p>ร่วมสนับสนุนเส้นทางการเรียนของนิสิตแพทย์ที่คุณต้องการดูแล โดยระบุชื่อนิสิตผู้รับทุน เพื่อส่งมอบโอกาสและกำลังใจให้เขาได้ก้าวต่อไป</p><div className="fund-card-footer"><span><Icon name="check" size={15} /> ระบุชื่อนิสิตที่ต้องการสนับสนุน</span><a href="#how-to" className="fund-link">ดูวิธีร่วมบริจาค <Icon name="arrow" size={18} /></a></div></div></article>
+              <article className="fund-card"><div className="fund-photo"><Image src="/images/learning.jpeg" alt="ภาพประกอบนิสิตฝึกทักษะทางการแพทย์" fill sizes="(max-width: 760px) 90vw, 560px" /><span className="fund-tag">เติมโอกาสให้คนที่ต้องการ</span></div><div className="fund-body"><div className="fund-title-row"><span className="fund-icon"><Icon name="graduate" size={27} /></span><span className="fund-number">01 / GENERAL FUND</span></div><h3>ทุนการศึกษาเพื่อนิสิตแพทย์</h3><p>สมทบกองทุนส่วนกลาง เพื่อให้คณะกรรมการพิจารณาจัดสรรทุนแก่นิสิตแพทย์ที่ขาดแคลนทุนทรัพย์ ตามความจำเป็นและเกณฑ์ของคณะ</p><div className="fund-card-footer"><span><Icon name="check" size={15} /> คณะจัดสรรให้กับนิสิต</span><Link href="/donate?fund=GENERAL_SCHOLARSHIP" className="fund-link">บริจาคทุนนี้ <Icon name="arrow" size={18} /></Link></div></div></article>
+              <article className="fund-card"><div className="fund-photo"><Image src="/images/scholarship.jpeg" alt="ภาพประกอบนิสิตแพทย์ผู้มุ่งมั่นในการศึกษา" fill sizes="(max-width: 760px) 90vw, 560px" /><span className="fund-tag">ส่งต่อกำลังใจให้คนที่คุณเลือก</span></div><div className="fund-body"><div className="fund-title-row"><span className="fund-icon peach"><Icon name="user" size={26} /></span><span className="fund-number">02 / PERSONAL SCHOLARSHIP</span></div><h3>ทุนการศึกษาแบบระบุผู้รับทุน</h3><p>ร่วมสนับสนุนเส้นทางการเรียนของนิสิตแพทย์ที่คุณต้องการดูแล โดยระบุชื่อนิสิตผู้รับทุน เพื่อส่งมอบโอกาสและกำลังใจให้เขาได้ก้าวต่อไป</p><div className="fund-card-footer"><span><Icon name="check" size={15} /> ระบุชื่อนิสิตที่ต้องการสนับสนุน</span><Link href="/donate?fund=SPECIFIC_STUDENT" className="fund-link">บริจาคทุนนี้ <Icon name="arrow" size={18} /></Link></div></div></article>
             </div>
           </div>
         </section>
@@ -120,7 +121,7 @@ export default function Home() {
         </section>
         <FundNews />
         <section id="faq" className="section faq-section"><div className="container faq-grid"><div className="faq-intro"><p className="section-label"><span /> HERE TO HELP</p><h2>ทุกข้อสงสัย<br />เราใส่ใจตอบ</h2><p>ข้อมูลที่ควรรู้ก่อนร่วมบริจาค<br />เพื่อให้ทุกการให้เป็นเรื่องง่าย</p><a href="#contact" className="text-link">สอบถามเพิ่มเติม <Icon name="arrow" size={18} /></a></div><div className="faq-list">{faqs.map((faq, index) => <details key={faq.question} className="faq-item"><summary><span className="faq-index">0{index + 1}</span><span>{faq.question}</span><span className="faq-plus" aria-hidden="true" /></summary><p>{faq.answer}</p></details>)}</div></div></section>
-        <section className="closing-section"><div className="container closing-inner"><div className="closing-art" aria-hidden="true"><Icon name="heart" size={74} /><span>✧</span></div><div><p className="section-label">A BETTER TOMORROW STARTS WITH YOU</p><h2>ความฝันของว่าที่หมอ<br />เดินต่อได้ ด้วยน้ำใจของคุณ</h2><p>ร่วมสร้างโอกาสทางการศึกษา เพื่อส่งต่อการดูแลที่ยั่งยืน</p></div><a href="#funds" className="button button-light">ร่วมส่งต่อโอกาส <Icon name="arrow" size={19} /></a></div></section>
+        <section className="closing-section"><div className="container closing-inner"><div className="closing-art" aria-hidden="true"><Icon name="heart" size={74} /><span>✧</span></div><div><p className="section-label">A BETTER TOMORROW STARTS WITH YOU</p><h2>ความฝันของว่าที่หมอ<br />เดินต่อได้ ด้วยน้ำใจของคุณ</h2><p>ร่วมสร้างโอกาสทางการศึกษา เพื่อส่งต่อการดูแลที่ยั่งยืน</p></div><Link href="/donate" className="button button-light">ร่วมส่งต่อโอกาส <Icon name="arrow" size={19} /></Link></div></section>
       </main>
       <footer id="contact" className="site-footer">
         <div className="container footer-main"><div className="footer-brand"><Brand /><p>ให้โอกาสทางการศึกษา<br />สร้างอนาคตทางการแพทย์ไปด้วยกัน</p></div><div className="footer-links"><h3>สำรวจเว็บไซต์</h3><a href="#about">รู้จักกองทุน</a><a href="#funds">ทุนการศึกษา</a><a href="#how-to">ขั้นตอนการบริจาค</a><a href="#news">ข่าวสารและกิจกรรม</a><a href="#faq">คำถามที่พบบ่อย</a></div><div className="footer-contact"><h3>ติดต่อกองทุนทุนการศึกษา</h3><p><Icon name="pin" size={17} /><span>คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา<br />19 หมู่ 2 ต.แม่กา อ.เมืองพะเยา จ.พะเยา 56000</span></p><a href="tel:054466666"><Icon name="phone" size={16} /> 054-466-666 <span className="contact-extension">(งานทุนการศึกษา)</span></a><a href="mailto:medfund@up.ac.th"><Icon name="mail" size={17} /> medfund@up.ac.th</a></div></div>

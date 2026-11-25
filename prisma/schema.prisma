@@ -42,20 +42,93 @@ enum InquiryStatus {
   RESOLVED
 }
 
+/// SHARED: the fund uses the shared account in payment_settings. OWN: the fund's own bank fields.
+enum PaymentMode {
+  SHARED
+  OWN
+}
+
+/// QR shown on the donation form: none, PromptPay ID, or bank account (Thai QR Payment).
+enum QrType {
+  NONE
+  PROMPTPAY
+  BANK_ACCOUNT
+}
+
 model ScholarshipFund {
-  fundId              Int      @id @default(autoincrement()) @map("fund_id")
-  fundCode            String   @unique @map("fund_code") @db.VarChar(50)
-  fundNameTh          String   @map("fund_name_th") @db.VarChar(255)
-  fundDescription     String?  @map("fund_description") @db.Text
-  requiresStudentName Boolean  @default(false) @map("requires_student_name")
-  bankName            String   @default("ธนาคารกรุงไทย") @map("bank_name") @db.VarChar(100)
-  bankAccountNo       String   @map("bank_account_no") @db.VarChar(50)
-  isActive            Boolean  @default(true) @map("is_active")
+  fundId              Int         @id @default(autoincrement()) @map("fund_id")
+  fundCode            String      @unique @map("fund_code") @db.VarChar(50)
+  fundNameTh          String      @map("fund_name_th") @db.VarChar(255)
+  fundDescription     String?     @map("fund_description") @db.Text
+  requiresStudentName Boolean     @default(false) @map("requires_student_name")
+  paymentMode         PaymentMode @default(OWN) @map("payment_mode")
+  bankName            String      @default("ธนาคารกรุงไทย") @map("bank_name") @db.VarChar(100)
+  // 3-digit Thai bank code, required for a bank-account QR.
+  bankCode            String?     @map("bank_code") @db.VarChar(3)
+  bankAccountNo       String      @map("bank_account_no") @db.VarChar(50)
+  bankAccountName     String?     @map("bank_account_name") @db.VarChar(255)
+  qrType              QrType      @default(NONE) @map("qr_type")
+  // PromptPay target: mobile (10 digits), tax/citizen ID (13) or e-wallet ID (15).
+  promptpayId         String?     @map("promptpay_id") @db.VarChar(20)
+  isActive            Boolean     @default(true) @map("is_active")
   createdAt           DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
   donations           Donation[]
 
   @@map("scholarship_funds")
+}
+
+/// Single row (setting_id = 1): the shared bank account and QR used by funds in SHARED mode.
+model PaymentSetting {
+  settingId       Int        @id @map("setting_id")
+  bankName        String     @map("bank_name") @db.VarChar(100)
+  bankCode        String?    @map("bank_code") @db.VarChar(3)
+  bankAccountNo   String     @map("bank_account_no") @db.VarChar(50)
+  bankAccountName String?    @map("bank_account_name") @db.VarChar(255)
+  qrType          QrType     @default(NONE) @map("qr_type")
+  promptpayId     String?    @map("promptpay_id") @db.VarChar(20)
+  updatedBy       Int?       @map("updated_by")
+  updatedAt       DateTime   @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  updater         AdminUser? @relation(fields: [updatedBy], references: [userId], onDelete: SetNull)
+
+  @@map("payment_settings")
+}
+
+/// Students donors can choose for funds that require a recipient name.
+model ScholarshipStudent {
+  studentId    Int      @id @default(autoincrement()) @map("student_id")
+  fullName     String   @map("full_name") @db.VarChar(255)
+  studentCode  String?  @map("student_code") @db.VarChar(20)
+  yearLevel    Int?     @map("year_level") @db.SmallInt
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([isActive, fullName], map: "idx_scholarship_students_active")
+  @@map("scholarship_students")
+}
+
+/// Single row (setting_id = 1): certificate layout and donor email templates.
+model CertificateSetting {
+  settingId               Int        @id @map("setting_id")
+  orgName                 String     @map("org_name") @db.VarChar(255)
+  title                   String     @db.VarChar(255)
+  subtitle                String     @db.VarChar(255)
+  bodyText                String     @map("body_text") @db.Text
+  blessingText            String     @map("blessing_text") @db.Text
+  footerNote              String     @map("footer_note") @db.Text
+  signerName              String     @map("signer_name") @db.VarChar(255)
+  signerPosition          String     @map("signer_position") @db.VarChar(255)
+  signatureImagePath      String?    @map("signature_image_path") @db.VarChar(500)
+  certificateEmailSubject String     @map("certificate_email_subject") @db.VarChar(255)
+  certificateEmailBody    String     @map("certificate_email_body") @db.Text
+  rdEmailSubject          String     @map("rd_email_subject") @db.VarChar(255)
+  rdEmailBody             String     @map("rd_email_body") @db.Text
+  updatedBy               Int?       @map("updated_by")
+  updatedAt               DateTime   @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  updater                 AdminUser? @relation(fields: [updatedBy], references: [userId], onDelete: SetNull)
+
+  @@map("certificate_settings")
 }
 
 model AdminUser {
@@ -83,6 +156,8 @@ model AdminUser {
   articlesUpdated     PrNewsArticle[] @relation("ArticleUpdater")
   carouselSlides      LandingCarouselSlide[]
   notificationsRead   AdminNotification[]
+  certificateSettings CertificateSetting[]
+  paymentSettings     PaymentSetting[]
 
   @@map("admin_users")
 }
