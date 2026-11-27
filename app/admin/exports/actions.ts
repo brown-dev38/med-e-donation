@@ -3,18 +3,18 @@
 import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { Prisma } from "@/generated/prisma/client";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { bangkokNow } from "@/lib/donation-form";
 import { EXPORT_ORDER, exportWhere, parseExportFilters } from "@/lib/edonation-export";
 import { prisma } from "@/lib/prisma";
 
-export type ExportState = null | { status: "error"; message: string } | { status: "success"; batchId: number; batchNo: string; count: number };
+export type ExportState = null | { status: "error"; message: string } | { status: "success"; batchId: number; batchNo: string; count: number; message?: string };
 
 const MAX_ROWS = 5000;
 
 /** Saves a batch of the donations matching the filters and marks them EXPORTED; the browser then downloads it. */
 export async function createExportBatch(_previous: ExportState, formData: FormData): Promise<ExportState> {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const filters = parseExportFilters((name) => formData.get(name));
   const ipAddress = ((await headers()).get("x-forwarded-for")?.split(",")[0] ?? "").trim().slice(0, 45) || null;
 

@@ -7,6 +7,17 @@ import { qrTargetError, type QrTarget } from "@/lib/promptpay";
 import { THAI_BANKS } from "@/lib/thai-banks";
 import { createFund, deleteFund, saveFund, saveSharedAccount } from "./actions";
 import { Message, submitWithoutReset } from "./settings-forms";
+import { useConfirmedAction } from "@/app/components/feedback";
+
+function DeleteFundButton({ fundId, fundName }: { fundId: number; fundName: string }) {
+  const { onSubmit, pending } = useConfirmedAction(deleteFund, { title: `ลบวัตถุประสงค์ “${fundName}”?`, content: "วัตถุประสงค์นี้จะหายไปจากฟอร์มบริจาค และไม่สามารถกู้คืนได้", okText: "ลบ", danger: true });
+  return (
+    <form onSubmit={onSubmit} className="admin-delete-fund">
+      <input type="hidden" name="fundId" value={fundId} />
+      <button type="submit" disabled={pending} className="admin-button admin-button-small admin-button-ghost admin-danger-text">{pending ? "กำลังลบ…" : "ลบวัตถุประสงค์นี้"}</button>
+    </form>
+  );
+}
 
 export type QrKind = "NONE" | "PROMPTPAY" | "BANK_ACCOUNT";
 export type AccountSettings = {
@@ -191,14 +202,11 @@ export function FundForm({ fund, shared }: { fund: FundSettings; shared: Account
         <Message state={state} />
         <div className="admin-actions-row">
           <button type="submit" className="admin-button" disabled={pending}>{pending ? "กำลังบันทึก…" : "บันทึก"}</button>
-          <Link href={`/donate?fund=${fund.fundCode}`} target="_blank" className="admin-inline-link">ดูฟอร์มบริจาค ↗</Link>
+          <Link href={`/?fund=${fund.fundCode}`} target="_blank" className="admin-inline-link">ดูฟอร์มบริจาค ↗</Link>
         </div>
       </form>
       {fund.donationCount === 0 && (
-        <form action={deleteFund} className="admin-delete-fund" onSubmit={(e) => { if (!confirm(`ลบวัตถุประสงค์ “${fund.fundNameTh}”?`)) e.preventDefault(); }}>
-          <input type="hidden" name="fundId" value={fund.fundId} />
-          <button type="submit" className="admin-button admin-button-small admin-button-ghost admin-danger-text">ลบวัตถุประสงค์นี้</button>
-        </form>
+        <DeleteFundButton fundId={fund.fundId} fundName={fund.fundNameTh} />
       )}
     </div>
   );

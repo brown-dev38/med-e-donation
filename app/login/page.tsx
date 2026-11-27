@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { getCurrentAdmin } from "@/lib/auth";
+import { getCurrentStaff } from "@/lib/auth";
 import LoginForm from "./login-form";
 import "./styles.css";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "เข้าสู่ระบบผ
 export const instant = false;
 
 async function LoginContent() {
-  if (await getCurrentAdmin()) redirect("/admin");
+  if (await getCurrentStaff()) redirect("/admin");
   return <LoginForm />;
 }
 

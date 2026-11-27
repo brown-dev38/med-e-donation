@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { createDatabaseClient } from "../../lib/database";
+import { confirmModal, expectToast } from "./ui";
 import { hashPassword } from "../../lib/password";
 
 const password = randomBytes(24).toString("hex");
@@ -57,7 +58,7 @@ test("fund settings open the fund with a PromptPay QR that carries the amount", 
   await form.getByLabel("บัญชีแยกของวัตถุประสงค์นี้").check();
   await form.getByLabel("เปิดรับบริจาควัตถุประสงค์นี้").check();
   await form.getByRole("button", { name: "บันทึก" }).click();
-  await expect(form.getByRole("alert")).toContainText("ต้องกรอกเลขที่บัญชีจริง");
+  await expectToast(page, "ต้องกรอกเลขที่บัญชีจริง");
 
   await form.getByLabel("เลขที่บัญชี", { exact: true }).fill("512-0-12345-6");
   await form.getByLabel("ชื่อบัญชี", { exact: true }).fill("กองทุนทดสอบ อีทูอี");
@@ -65,12 +66,12 @@ test("fund settings open the fund with a PromptPay QR that carries the amount", 
   await form.getByLabel("พร้อมเพย์", { exact: true }).fill("0994000165552");
   await expect(form.getByRole("img", { name: /QR พร้อมเพย์/ })).toBeVisible();
   await form.getByRole("button", { name: "บันทึก" }).click();
-  await expect(form.getByRole("status").filter({ hasText: "เปิดรับบริจาค" })).toBeVisible();
+  await expectToast(page, "บันทึกแล้ว กองทุนนี้เปิดรับบริจาค");
   const fund = await prisma.scholarshipFund.findUniqueOrThrow({ where: { fundId } });
   expect(fund).toMatchObject({ isActive: true, paymentMode: "OWN", qrType: "PROMPTPAY", bankAccountNo: "512-0-12345-6", promptpayId: "0994000165552", bankAccountName: "กองทุนทดสอบ อีทูอี" });
   await page.screenshot({ path: "test-results/settings-funds.png", fullPage: true });
 
-  await page.goto(`/donate?fund=${fundCode}`);
+  await page.goto(`/?fund=${fundCode}`);
   await page.getByRole("button", { name: "1,000 ฿" }).click();
   await expect(page.getByRole("img", { name: "QR พร้อมเพย์ ยอด 1000.00 บาท" })).toBeVisible();
   await expect(page.getByText("กองทุนทดสอบ อีทูอี")).toBeVisible();
@@ -90,7 +91,7 @@ test("new purpose on the shared account shows the shared bank-account QR, and ca
   await shared.getByLabel(/^QR จากเลขบัญชีธนาคาร/).check();
   await expect(shared.getByRole("img", { name: "QR เลขบัญชีธนาคาร" })).toBeVisible();
   await shared.getByRole("button", { name: "บันทึกบัญชีรับเงินรวม" }).click();
-  await expect(shared.getByRole("status")).toContainText("บันทึกบัญชีรับเงินรวมแล้ว");
+  await expectToast(page, "บันทึกบัญชีรับเงินรวมแล้ว");
 
   // Create a purpose; it starts closed and on the shared account.
   await page.getByLabel("ชื่อวัตถุประสงค์", { exact: true }).fill(newName);
@@ -101,18 +102,19 @@ test("new purpose on the shared account shows the shared bank-account QR, and ca
   await expect(card.getByLabel("ใช้บัญชีรับเงินรวม")).toBeChecked();
   await card.getByLabel("เปิดรับบริจาควัตถุประสงค์นี้").check();
   await card.getByRole("button", { name: "บันทึก" }).click();
-  await expect(card.getByRole("status").filter({ hasText: "เปิดรับบริจาค" })).toBeVisible();
+  await expectToast(page, "บันทึกแล้ว กองทุนนี้เปิดรับบริจาค");
   await page.screenshot({ path: "test-results/settings-shared.png", fullPage: true });
 
-  await page.goto(`/donate?fund=${newCode}`);
+  await page.goto(`/?fund=${newCode}`);
   await page.getByRole("button", { name: "500 ฿" }).click();
   await expect(page.getByRole("img", { name: "QR เลขบัญชีธนาคาร ยอด 500.00 บาท" })).toBeVisible();
   await expect(page.getByText("512-0-12345-6")).toBeVisible();
 
   // A purpose with no donations can be deleted.
   await page.goto("/admin/settings");
-  page.once("dialog", (dialog) => dialog.accept());
   await page.locator(".admin-settings-card", { has: page.getByRole("heading", { name: newCode }) }).getByRole("button", { name: "ลบวัตถุประสงค์นี้" }).click();
+  await confirmModal(page, "ลบ");
+  await expectToast(page, "ลบวัตถุประสงค์แล้ว");
   await expect(page.getByRole("heading", { name: newCode })).toHaveCount(0);
   expect(await prisma.scholarshipFund.count({ where: { fundCode: newCode } })).toBe(0);
 });
@@ -125,7 +127,7 @@ test("students added in settings become the donor's recipient choices", async ({
   await page.getByRole("button", { name: "เพิ่มรายชื่อ" }).click();
   await expect(page.getByRole("cell", { name: STUDENT, exact: true })).toBeVisible();
 
-  await page.goto(`/donate?fund=${fundCode}`);
+  await page.goto(`/?fund=${fundCode}`);
   const select = page.getByLabel("เลือกนิสิตผู้รับทุน");
   await expect(select.locator("option", { hasText: STUDENT })).toHaveCount(1);
 });
@@ -135,7 +137,7 @@ test("certificate settings change the generated PDF", async ({ page }) => {
   await page.goto("/admin/settings/certificate");
   await page.getByLabel("ชื่อผู้ลงนาม").fill("ผู้ทดสอบ ลงนามอีทูอี");
   await page.getByRole("button", { name: "บันทึกการตั้งค่า" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "บันทึกการตั้งค่าแล้ว" })).toBeVisible();
+  await expectToast(page, "บันทึกการตั้งค่าแล้ว");
   expect((await prisma.certificateSetting.findUniqueOrThrow({ where: { settingId: 1 } })).signerName).toBe("ผู้ทดสอบ ลงนามอีทูอี");
 
   const preview = await page.request.get("/admin/settings/certificate/preview");

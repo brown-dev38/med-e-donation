@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { EXPORT_ORDER, exportWhere, parseExportFilters } from "@/lib/edonation-export";
 import { prisma } from "@/lib/prisma";
 import { formatBaht, formatThaiDateTime, formatTransfer, StatusBadge } from "../admin-shell";
@@ -14,7 +14,7 @@ const PREVIEW_ROWS = 20;
 const formatDate = (date: Date) => date.toLocaleDateString("th-TH", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
 
 async function ExportContent({ searchParams }: { searchParams: PageProps<"/admin/exports">["searchParams"] }) {
-  await requireAdmin();
+  await requireStaff();
   const params = await searchParams;
   const filters = parseExportFilters((name) => params[name]);
   const where = exportWhere(filters);

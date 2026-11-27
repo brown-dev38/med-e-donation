@@ -1,6 +1,7 @@
 // Shared donation form rules. Imported by the browser form and the Server Action,
 // so it must stay free of Node.js and server-only modules.
 
+/** Suggested prefixes shown under the prefix field. Donors may also type their own (e.g. ยศ, ตำแหน่งทางวิชาการ). */
 export const DONOR_PREFIXES = {
   INDIVIDUAL: ["นาย", "นาง", "นางสาว", "นพ.", "พญ.", "ดร."],
   CORPORATE: ["บริษัท", "ห้างหุ้นส่วนจำกัด", "ห้างหุ้นส่วนสามัญ", "มูลนิธิ", "สมาคม"],
@@ -10,6 +11,7 @@ export type DonorType = keyof typeof DONOR_PREFIXES;
 
 export const PRESET_AMOUNTS = [500, 1000, 2000, 5000, 10000] as const;
 export const MAX_AMOUNT = 10_000_000;
+export const MAX_PREFIX_LENGTH = 50; // donations.donor_prefix is VARCHAR(50)
 export const SLIP_MAX_BYTES = 5 * 1024 * 1024;
 export const SLIP_MIME_TYPES = ["image/jpeg", "image/png"] as const;
 const MAX_TRANSFER_AGE_DAYS = 365;
@@ -133,7 +135,9 @@ export function validateDonation(fields: DonationFields, funds: FundRule[], now 
 
   const donorType = fields.donorType in DONOR_PREFIXES ? (fields.donorType as DonorType) : null;
   if (!donorType) errors.donorType = "กรุณาเลือกประเภทผู้บริจาค";
-  else if (!(DONOR_PREFIXES[donorType] as readonly string[]).includes(fields.donorPrefix)) errors.donorPrefix = "กรุณาเลือกคำนำหน้า";
+  const donorPrefix = collapse(fields.donorPrefix);
+  if (donorType && !donorPrefix) errors.donorPrefix = donorType === "CORPORATE" ? "กรุณาระบุประเภทนิติบุคคล" : "กรุณาระบุคำนำหน้า";
+  else if (donorPrefix.length > MAX_PREFIX_LENGTH) errors.donorPrefix = `คำนำหน้ายาวเกินไป (ไม่เกิน ${MAX_PREFIX_LENGTH} ตัวอักษร)`;
 
   const donorName = collapse(fields.donorName);
   if (donorName.length < 2) errors.donorName = donorType === "CORPORATE" ? "กรุณากรอกชื่อนิติบุคคล" : "กรุณากรอกชื่อ–นามสกุล";
@@ -171,7 +175,7 @@ export function validateDonation(fields: DonationFields, funds: FundRule[], now 
       studentRecipientCode: fund.requiresStudentName && studentRecipientCode ? studentRecipientCode : null,
       amount,
       donorType,
-      donorPrefix: fields.donorPrefix,
+      donorPrefix,
       donorName,
       taxId,
       phone,

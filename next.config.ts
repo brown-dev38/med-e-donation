@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   },
   // Node-only library used by the Excel export route; load it from node_modules instead of bundling.
   serverExternalPackages: ["exceljs"],
+  // The donation form is now the home page; keep old /donate links (incl. ?fund=) working.
+  async redirects() {
+    return [{ source: "/donate", destination: "/", permanent: true }];
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

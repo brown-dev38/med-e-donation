@@ -3,6 +3,7 @@ import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { createDatabaseClient } from "../../lib/database";
+import { confirmModal, expectToast } from "./ui";
 import { encryptTaxId, hashTaxId, maskTaxId } from "../../lib/donor-crypto";
 import { hashPassword } from "../../lib/password";
 
@@ -116,6 +117,8 @@ test("admin reviews a slip, reveals the tax ID and approves it", async ({ page }
   for (const label of [/ยอดเงินและวัน–เวลา/, /ชื่อผู้บริจาคตรงกับ/, /เลขผู้เสียภาษี 13 หลักถูกต้อง/]) await page.getByLabel(label).check();
   await page.screenshot({ path: "test-results/admin-review.png", fullPage: true });
   await approve.click();
+  await confirmModal(page, "อนุมัติ");
+  await expectToast(page, /อนุมัติแล้ว ออกเลขที่/);
 
   await expect(page.getByRole("heading", { name: "ผลการตรวจสอบ" })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/MEDUP-\d{2}\/\d{4,}/).first()).toBeVisible();
@@ -141,6 +144,8 @@ test("admin reviews a slip, reveals the tax ID and approves it", async ({ page }
   await expect(approve2).toBeDisabled();
   await page.getByLabel(/คีย์ข้อมูลเข้าระบบ e-Donation กรมสรรพากรเรียบร้อย/).check();
   await approve2.click();
+  await confirmModal(page, "อนุมัติ");
+  await expectToast(page, "อนุมัติครั้งที่ 2 และส่งอีเมลยืนยันแล้ว");
   await expect(page.getByText("อีเมลฉบับที่ 2 (ยืนยันสรรพากร)")).toBeVisible({ timeout: 30_000 });
   const completed = await prisma.donation.findUniqueOrThrow({ where: { donationId: donation.donationId } });
   expect(completed.verificationStatus).toBe("COMPLETED_RD");
@@ -156,6 +161,8 @@ test("admin rejects a slip with a reason", async ({ page }) => {
   await page.getByRole("button", { name: "ไม่อนุมัติ", exact: true }).click();
   await page.getByLabel(/เหตุผลที่ไม่อนุมัติ/).fill("ไม่พบยอดเงินเข้าใน Book Bank");
   await page.getByRole("button", { name: "บันทึกว่าไม่อนุมัติ" }).click();
+  await confirmModal(page, "ไม่อนุมัติ");
+  await expectToast(page, "บันทึกว่าไม่อนุมัติแล้ว");
   await expect(page.getByText("ไม่พบยอดเงินเข้าใน Book Bank")).toBeVisible();
   const saved = await prisma.donation.findUniqueOrThrow({ where: { donationId: donation.donationId } });
   expect(saved.verificationStatus).toBe("REJECTED");

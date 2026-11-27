@@ -2,7 +2,8 @@
 
 import { startTransition, useActionState } from "react";
 import type { FormEvent } from "react";
-import { addStudents, saveCertificateSettings, type SettingsState } from "./actions";
+import { useConfirmedAction, useResultToast } from "@/app/components/feedback";
+import { addStudents, saveCertificateSettings, updateStudent, type SettingsState } from "./actions";
 
 /**
  * Submits without React's automatic form reset, so a validation error does not wipe what the
@@ -16,9 +17,10 @@ export function submitWithoutReset(action: (formData: FormData) => void) {
   };
 }
 
+/** Shows the action result as a toast (success or error). */
 export function Message({ state }: { state: SettingsState }) {
-  if (!state) return null;
-  return <p className={state.status === "error" ? "admin-form-error" : "admin-form-success"} role={state.status === "error" ? "alert" : "status"}>{state.message}</p>;
+  useResultToast(state);
+  return null;
 }
 
 export function AddStudentsForm() {
@@ -85,6 +87,24 @@ export function CertificateSettingsEditor({ settings, fields }: { settings: Cert
         <Message state={state} />
         <button type="submit" className="admin-button" disabled={pending}>{pending ? "กำลังบันทึก…" : "บันทึกการตั้งค่า"}</button>
       </div>
+    </form>
+  );
+}
+
+/** Show / hide / delete buttons for one student, each confirmed in a modal. */
+export function StudentRowActions({ studentId, fullName, isActive }: { studentId: number; fullName: string; isActive: boolean }) {
+  const { onSubmit, pending } = useConfirmedAction(updateStudent, (submitter) => {
+    const op = submitter?.value;
+    if (op === "delete") return { title: `ลบ ${fullName}?`, content: "รายชื่อนี้จะถูกลบออกจากระบบ และไม่สามารถกู้คืนได้", okText: "ลบ", danger: true };
+    return op === "deactivate"
+      ? { title: `ซ่อน ${fullName}?`, content: "ผู้บริจาคจะเลือกนิสิตคนนี้จากฟอร์มไม่ได้จนกว่าจะแสดงอีกครั้ง", okText: "ซ่อน" }
+      : { title: `แสดง ${fullName}?`, content: "ผู้บริจาคจะเลือกนิสิตคนนี้จากฟอร์มบริจาคได้", okText: "แสดง" };
+  });
+  return (
+    <form onSubmit={onSubmit} className="admin-row-actions">
+      <input type="hidden" name="studentId" value={studentId} />
+      <button type="submit" name="op" value={isActive ? "deactivate" : "activate"} disabled={pending} className="admin-button admin-button-small admin-button-ghost" aria-label={`${isActive ? "ซ่อน" : "แสดง"} ${fullName}`}>{isActive ? "ซ่อน" : "แสดง"}</button>
+      <button type="submit" name="op" value="delete" disabled={pending} className="admin-button admin-button-small admin-button-ghost admin-danger-text" aria-label={`ลบ ${fullName}`}>ลบ</button>
     </form>
   );
 }

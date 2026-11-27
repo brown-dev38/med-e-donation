@@ -4,6 +4,7 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { createDatabaseClient } from "../../lib/database";
+import { confirmModal, expectToast } from "./ui";
 
 // 1×1 transparent PNG
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
@@ -56,13 +57,15 @@ async function chooseStudent(page: Page) {
 }
 
 test("donor submits the form with a slip and receives a reference number", async ({ page }) => {
-  await page.goto(`/donate?fund=${fundCode}`);
+  await page.goto(`/?fund=${fundCode}`);
   await expect(page.getByRole("heading", { name: "แบบฟอร์มบริจาคทุนการศึกษา" })).toBeVisible();
   await expect(page.getByText("999-9-99999-9")).toBeVisible();
 
   // Empty submit shows errors and keeps the donor on the form.
   await page.getByRole("button", { name: "ยืนยันการบริจาค" }).click();
   await expect(page.locator(".donate-alert")).toContainText("กรุณาตรวจสอบข้อมูล");
+  await expectToast(page, "กรุณาตรวจสอบข้อมูลให้ครบถ้วน");
+  await expect(page.getByRole("dialog")).toHaveCount(0); // invalid forms never reach the confirm modal
   await expect(page.locator("#studentRecipientName-error")).toBeVisible();
   await expect(page.locator("#slip-error")).toBeVisible();
   await page.screenshot({ path: "test-results/donate-errors.png", fullPage: true });
@@ -71,7 +74,8 @@ test("donor submits the form with a slip and receives a reference number", async
   const studentName = await chooseStudent(page);
   await page.getByRole("button", { name: "1,000 ฿" }).click();
   await expect(page.getByLabel("หรือระบุจำนวนเงินเอง")).toHaveValue("1000");
-  await page.getByLabel("คำนำหน้า").selectOption("นาย");
+  // The prefix accepts typed text as well as the suggestions.
+  await page.getByLabel("คำนำหน้า").fill("ผศ.ดร.");
   await page.locator("#donorName").fill("ผู้บริจาค ทดสอบ");
   await page.getByLabel("เลขประจำตัวผู้เสียภาษี").fill(taxId);
   await page.getByLabel("เบอร์โทรศัพท์").fill("081-234-5678");
@@ -84,8 +88,22 @@ test("donor submits the form with a slip and receives a reference number", async
   await expect(page.locator(".donate-alert")).toHaveCount(0);
   await page.screenshot({ path: "test-results/donate-filled.png", fullPage: true });
 
+  // The confirm modal summarises the donation; going back to edit sends nothing.
   await page.getByRole("button", { name: "ยืนยันการบริจาค" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("1,000.00 บาท");
+  await expect(dialog).toContainText("ผศ.ดร. ผู้บริจาค ทดสอบ");
+  await expect(dialog).toContainText("donor-e2e@example.test");
+  await page.waitForTimeout(300); // let the modal finish opening before the screenshot
+  await page.screenshot({ path: "test-results/donate-confirm.png" });
+  await dialog.getByRole("button", { name: "กลับไปแก้ไข" }).click();
+  await expect(dialog).toBeHidden();
+  expect(await prisma.donation.count({ where: { fundId } })).toBe(0);
+
+  await page.getByRole("button", { name: "ยืนยันการบริจาค" }).click();
+  await confirmModal(page, "ยืนยันและส่งข้อมูล");
   await expect(page.getByRole("heading", { name: "ได้รับข้อมูลการบริจาคเรียบร้อยแล้ว" })).toBeVisible({ timeout: 15_000 });
+  await expectToast(page, /ส่งข้อมูลการบริจาคเรียบร้อยแล้ว เลขอ้างอิง MEDUP-/);
   const reference = (await page.locator(".donate-reference").textContent())!;
   expect(reference).toMatch(/^MEDUP-\d{8}-\d{3,}$/);
   await page.screenshot({ path: "test-results/donate-success.png", fullPage: true });
@@ -93,6 +111,7 @@ test("donor submits the form with a slip and receives a reference number", async
   const donation = await prisma.donation.findUniqueOrThrow({ where: { referenceNo: reference }, include: { notifications: true } });
   expect(donation.fundId).toBe(fundId);
   expect(donation.studentRecipientName).toBe(studentName);
+  expect(donation.donorPrefix).toBe("ผศ.ดร.");
   expect(donation.amount.toFixed(2)).toBe("1000.00");
   expect(donation.phone).toBe("0812345678");
   expect(donation.taxIdMasked).toBe(`${taxId.slice(0, 5)}xxxx${taxId.slice(-4)}`);
@@ -104,10 +123,10 @@ test("donor submits the form with a slip and receives a reference number", async
 });
 
 test("server rejects a slip whose contents are not an image", async ({ page }) => {
-  await page.goto(`/donate?fund=${fundCode}`);
+  await page.goto(`/?fund=${fundCode}`);
   await chooseStudent(page);
   await page.getByLabel("หรือระบุจำนวนเงินเอง").fill("250");
-  await page.getByLabel("คำนำหน้า").selectOption("นาง");
+  await page.getByLabel("คำนำหน้า").fill("นาง");
   await page.locator("#donorName").fill("ผู้บริจาค ทดสอบ");
   await page.getByLabel("เลขประจำตัวผู้เสียภาษี").fill(taxIdWithCheckDigit("310050012345"));
   await page.getByLabel("เบอร์โทรศัพท์").fill("0812345678");
@@ -117,13 +136,15 @@ test("server rejects a slip whose contents are not an image", async ({ page }) =
   await page.locator("#slip").setInputFiles({ name: "fake.png", mimeType: "image/png", buffer: Buffer.from("not really a png file") });
   await page.getByLabel(/ข้าพเจ้ายินยอม/).check();
   await page.getByRole("button", { name: "ยืนยันการบริจาค" }).click();
+  await confirmModal(page, "ยืนยันและส่งข้อมูล");
   await expect(page.locator("#slip-error")).toContainText("ไม่ใช่ภาพ JPG หรือ PNG");
+  await expectToast(page, "กรุณาตรวจสอบข้อมูลที่ไฮไลต์ไว้");
   expect(await prisma.donation.count({ where: { fundId } })).toBe(0);
 });
 
 test("mobile layout has no horizontal scroll", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
-  await page.goto(`/donate?fund=${fundCode}`);
+  await page.goto(`/?fund=${fundCode}`);
   await expect(page.getByRole("button", { name: "ยืนยันการบริจาค" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);

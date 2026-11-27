@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { updateStudent } from "../actions";
-import { AddStudentsForm } from "../settings-forms";
+import { AddStudentsForm, StudentRowActions } from "../settings-forms";
 
 export const metadata: Metadata = { title: "รายชื่อนิสิต | MED e-Donation" };
 export const instant = false;
@@ -32,11 +31,7 @@ async function StudentSettings() {
                       <td>{student.yearLevel ?? "—"}</td>
                       <td>{student.isActive ? <span className="admin-status admin-status-completed_rd">แสดงบนฟอร์ม</span> : <span className="admin-status admin-status-rejected">ซ่อน</span>}</td>
                       <td>
-                        <form action={updateStudent} className="admin-row-actions">
-                          <input type="hidden" name="studentId" value={student.studentId} />
-                          <button type="submit" name="op" value={student.isActive ? "deactivate" : "activate"} className="admin-button admin-button-small admin-button-ghost" aria-label={`${student.isActive ? "ซ่อน" : "แสดง"} ${student.fullName}`}>{student.isActive ? "ซ่อน" : "แสดง"}</button>
-                          <button type="submit" name="op" value="delete" className="admin-button admin-button-small admin-button-ghost admin-danger-text" aria-label={`ลบ ${student.fullName}`}>ลบ</button>
-                        </form>
+                        <StudentRowActions studentId={student.studentId} fullName={student.fullName} isActive={student.isActive} />
                       </td>
                     </tr>
                   ))}

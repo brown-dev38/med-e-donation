@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import type { NextRequest } from "next/server";
-import { getCurrentAdmin } from "@/lib/auth";
+import { getCurrentStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slipAbsolutePath } from "@/lib/slip-storage";
 
@@ -9,7 +9,7 @@ const TYPES: Record<string, string> = { jpg: "image/jpeg", png: "image/png" };
 
 // Slips contain personal banking data: admin session required, never cached by shared caches.
 export async function GET(_request: NextRequest, ctx: RouteContext<"/admin/slips/[id]">) {
-  const admin = await getCurrentAdmin();
+  const admin = await getCurrentStaff();
   if (!admin) return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
   const { id } = await ctx.params;
   if (!UUID.test(id)) return new Response("Not found", { status: 404 });

@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import ExcelJS from "exceljs";
 import { expect, test } from "@playwright/test";
 import { createDatabaseClient } from "../../lib/database";
+import { confirmModal } from "./ui";
 import { encryptTaxId, hashTaxId, maskTaxId } from "../../lib/donor-crypto";
 import { hashPassword } from "../../lib/password";
 
@@ -77,6 +78,7 @@ test("finance export: batch is saved, file has full tax IDs as text, and rows ar
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "ดาวน์โหลด Excel (1 รายการ)" }).click();
+  await confirmModal(page, "ส่งออก");
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/^e-donation-EXP-\d{6}-\d{2,}\.xlsx$/);
   const file = await download.path();

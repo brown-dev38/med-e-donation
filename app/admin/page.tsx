@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ROLE_LABELS } from "@/lib/roles";
 import { formatBaht } from "./admin-shell";
 
 export const instant = false;
 
 async function AdminDashboard() {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const [donations, pending, waiting, completed, funds, raised, overdue] = await Promise.all([
     prisma.donation.count(),
     prisma.donation.count({ where: { verificationStatus: "PENDING_SLIP_CHECK" } }),
@@ -28,7 +29,7 @@ async function AdminDashboard() {
     <main className="admin-main">
       <div className="admin-welcome">
         <div><p className="admin-eyebrow">ADMIN DASHBOARD</p><h1>สวัสดี, {admin.fullName}</h1><p>ภาพรวมกองทุนและรายการบริจาคทุนการศึกษา</p></div>
-        <span className="admin-role">ผู้ดูแลระบบ</span>
+        <span className="admin-role">{ROLE_LABELS[admin.role]}</span>
       </div>
       <div className="admin-stats">
         {stats.map((stat) => (
@@ -60,7 +61,7 @@ async function AdminDashboard() {
       )}
       <section className="admin-account">
         <div className="admin-account-icon" aria-hidden="true">✓</div>
-        <div><h2>เข้าสู่ระบบสำเร็จ</h2><p>บัญชี {admin.email}</p><p>สิทธิ์ผู้ดูแลระบบ · การเชื่อมต่อฐานข้อมูลพร้อมใช้งาน</p></div>
+        <div><h2>เข้าสู่ระบบสำเร็จ</h2><p>บัญชี {admin.email}</p><p>สิทธิ์{ROLE_LABELS[admin.role]} · การเชื่อมต่อฐานข้อมูลพร้อมใช้งาน</p></div>
       </section>
     </main>
   );

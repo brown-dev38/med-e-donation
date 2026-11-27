@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { createDatabaseClient } from "../../lib/database";
 import { hashPassword } from "../../lib/password";
+import { confirmModal } from "./ui";
 
 let prisma: ReturnType<typeof createDatabaseClient>;
 const password = randomBytes(24).toString("hex");
@@ -49,7 +50,8 @@ test("valid credentials create a protected session and logout revokes it", async
   expect(session?.httpOnly).toBe(true);
   expect(session?.sameSite).toBe("Lax");
   expect(await prisma.adminSession.count({ where: { userId } })).toBe(1);
-  await page.getByRole("button", { name: "ออกจากระบบ" }).click();
+  await page.getByRole("complementary", { name: "เมนูผู้ดูแล" }).getByRole("button", { name: "ออกจากระบบ" }).click();
+  await confirmModal(page, "ออกจากระบบ");
   await expect(page).toHaveURL(/\/login$/);
   expect(await prisma.adminSession.count({ where: { userId } })).toBe(0);
   await page.goto("/admin");
@@ -77,14 +79,25 @@ test("expired sessions cannot access the dashboard", async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("revoked admin privileges take effect on existing sessions", async ({ page }) => {
+test("demoting to employee removes settings access on the existing session", async ({ page }) => {
   await signIn(page);
   await expect(page).toHaveURL(/\/admin$/);
-  await prisma.adminUser.update({ where: { userId }, data: { role: "VIEWER" } });
-  await page.goto("/admin");
-  await expect(page).toHaveURL(/\/login$/);
+  await prisma.adminUser.update({ where: { userId }, data: { role: "EMPLOYEE" } });
+  await page.goto("/admin/settings");
+  await expect(page).toHaveURL(/\/admin$/);
+  const sidebar = page.getByRole("complementary", { name: "เมนูผู้ดูแล" });
+  await expect(sidebar.getByRole("link", { name: /^รายการบริจาค/ })).toBeVisible();
+  await expect(sidebar.getByRole("link", { name: "กองทุนและการชำระเงิน" })).toHaveCount(0);
+  expect((await page.request.get("/admin/settings/signature")).status()).toBe(403);
+});
+
+test("employees can sign in for daily work", async ({ page }) => {
+  await prisma.adminUser.update({ where: { userId }, data: { role: "EMPLOYEE" } });
   await signIn(page);
-  await expect(page.locator("#login-error")).toBeVisible();
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.locator(".admin-role")).toHaveText("เจ้าหน้าที่");
+  await page.goto("/admin/settings/users");
+  await expect(page).toHaveURL(/\/admin$/);
 });
 
 test("inactive accounts cannot sign in", async ({ page }) => {

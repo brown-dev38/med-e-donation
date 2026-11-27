@@ -18,7 +18,7 @@ export async function authenticateAdmin(email: string, password: string) {
   const user = await prisma.adminUser.findUnique({ where: { email } });
   const validPassword = await verifyPassword(password, user?.passwordHash ?? dummyHash);
   const now = new Date();
-  if (!user || !user.isActive || user.role !== "ADMIN" || (user.lockedUntil && user.lockedUntil > now)) {
+  if (!user || !user.isActive || (user.lockedUntil && user.lockedUntil > now)) {
     return { error: INVALID_CREDENTIALS };
   }
 
@@ -65,7 +65,8 @@ export async function authenticateAdmin(email: string, password: string) {
   return { success: true };
 }
 
-export const getCurrentAdmin = cache(async () => {
+/** The signed-in staff member (any role), or null. */
+export const getCurrentStaff = cache(async () => {
   // Session expiry and database access must run at request time, including prefetches.
   await connection();
   const token = (await cookies()).get(COOKIE_NAME)?.value;
@@ -77,14 +78,22 @@ export const getCurrentAdmin = cache(async () => {
       user: { select: { userId: true, username: true, fullName: true, email: true, role: true, isActive: true, lastLoginAt: true } },
     },
   });
-  if (!session || session.expiresAt <= new Date() || !session.user.isActive || session.user.role !== "ADMIN") return null;
+  if (!session || session.expiresAt <= new Date() || !session.user.isActive) return null;
   return session.user;
 });
 
+/** Any signed-in staff member (ADMIN or EMPLOYEE): daily donation work. */
+export async function requireStaff() {
+  const staff = await getCurrentStaff();
+  if (!staff) redirect("/login");
+  return staff;
+}
+
+/** ADMIN only: settings and user management. Employees are sent back to the dashboard. */
 export async function requireAdmin() {
-  const admin = await getCurrentAdmin();
-  if (!admin) redirect("/login");
-  return admin;
+  const staff = await requireStaff();
+  if (staff.role !== "ADMIN") redirect("/admin");
+  return staff;
 }
 
 export async function deleteAdminSession() {

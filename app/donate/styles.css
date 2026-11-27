@@ -155,3 +155,11 @@
   .donate-success, .donate-closed { padding: 30px 20px; }
   .donate-field input, .donate-field select { font-size: 16px; }
 }
+
+/* Confirm modal summary (Ant Design modal content). */
+.donate-confirm p { margin: 4px 0 12px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.donate-confirm dl { margin: 0; display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: #f8fbf6; }
+.donate-confirm dl > div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.6; }
+.donate-confirm dt { color: var(--muted); }
+.donate-confirm dd { margin: 0; color: var(--foreground); font-weight: 550; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .donate-confirm dl > div { grid-template-columns: 1fr; gap: 0; } }

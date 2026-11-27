@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatBaht, formatThaiDateTime, formatTransfer, StatusBadge } from "../../admin-shell";
 import { RdPanel, ResendEmail, ReviewPanel, TaxIdReveal } from "./review-panel";
@@ -22,7 +22,7 @@ const AUDIT_LABELS: Record<string, string> = {
 const EMAIL_STATUS = { SENT: "ส่งแล้ว", FAILED: "ส่งไม่สำเร็จ", PENDING: "ยังไม่ได้ส่ง" } as const;
 
 async function DonationDetail({ params }: { params: PageProps<"/admin/donations/[id]">["params"] }) {
-  await requireAdmin();
+  await requireStaff();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const donation = await prisma.donation.findUnique({

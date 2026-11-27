@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import QRCode from "qrcode";
+import "./promptpay-qr.css";
 import { useEffect, useState } from "react";
 import { qrTargetError, thaiQrPayload, type QrTarget } from "@/lib/promptpay";
 
@@ -24,7 +26,9 @@ export default function ThaiQr({ target, amount, size = 220, caption }: { target
   const label = target.type === "PROMPTPAY" ? "พร้อมเพย์" : "เลขบัญชีธนาคาร";
   return (
     <figure className="promptpay-qr" style={{ width: size }}>
-      <figcaption className="promptpay-head"><span>THAI QR</span> PAYMENT</figcaption>
+      <figcaption className="promptpay-head">
+        <Image src="/images/ThaiQR.jpg" alt="Thai QR Payment" fill sizes={`${size}px`} />
+      </figcaption>
       {ready ? (
         // The SVG is generated locally by the qrcode library from a digits-only payload.
         <div className="promptpay-code" role="img" aria-label={`QR ${label}${amount ? ` ยอด ${amount} บาท` : ""}`} dangerouslySetInnerHTML={{ __html: svg.markup }} />

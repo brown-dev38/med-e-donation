@@ -16,6 +16,7 @@ export function createDatabaseClient() {
     connectionLimit: 5,
     connectTimeout: 5_000,
     acquireTimeout: 10_000,
+    allowPublicKeyRetrieval: true,
     timezone: "+00:00",
   });
   return new PrismaClient({ adapter });

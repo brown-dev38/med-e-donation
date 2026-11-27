@@ -1,11 +1,13 @@
-import { getCurrentAdmin } from "@/lib/auth";
+import { getCurrentStaff } from "@/lib/auth";
 import { renderCertificatePdf } from "@/lib/certificate-pdf";
 import { getCertificateSettings } from "@/lib/certificate-settings";
 import { fiscalYearBe, formatDocumentNo } from "@/lib/certificate-number";
 
 // Sample certificate with the saved settings and fictional donor data.
 export async function GET() {
-  if (!(await getCurrentAdmin())) return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
+  const staff = await getCurrentStaff();
+  if (!staff) return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
+  if (staff.role !== "ADMIN") return new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } }); // settings are admin-only
   const now = new Date();
   const pdf = await renderCertificatePdf(
     {

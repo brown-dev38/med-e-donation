@@ -1,0 +1,13 @@
+/* Thai QR Payment card: official logo strip, the QR code, and a caption. */
+.promptpay-qr { max-width: 100%; margin: 0 auto; overflow: hidden; border: 1px solid #d7dee8; border-radius: 12px; background: #fff; text-align: center; box-shadow: 0 4px 14px #1a37610f; }
+
+/* The logo file is a 600×600 square with the mark centred on solid navy. A 3:1 strip from the centre
+   trims only empty navy above and below, so the logo itself keeps its proportions. */
+.promptpay-head { position: relative; aspect-ratio: 3 / 1; margin: 0; background: #1a3761; }
+.promptpay-head img { object-fit: cover; object-position: center; }
+
+.promptpay-code { padding: 12px; line-height: 0; }
+.promptpay-code svg { display: block; width: 100%; height: auto; }
+.promptpay-loading { display: grid; place-items: center; aspect-ratio: 1; color: #6b7a8c; font-size: 12px; line-height: 1.5; }
+.promptpay-foot { display: block; padding: 8px 12px 10px; border-top: 1px solid #edf1f5; color: #1a3761; font-size: 12px; font-weight: 600; line-height: 1.5; }
+.promptpay-invalid { margin: 0; color: #a3391f; font-size: 12px; }

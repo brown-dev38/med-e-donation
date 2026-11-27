@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
-import { getCurrentAdmin } from "@/lib/auth";
+import { getCurrentStaff } from "@/lib/auth";
 import { buildExportWorkbook } from "@/lib/edonation-export";
 import { prisma } from "@/lib/prisma";
 
 // The file contains full 13-digit tax IDs: admin session required, every download audited (PDPA).
 export async function GET(request: NextRequest, ctx: RouteContext<"/admin/exports/[id]/download">) {
-  const admin = await getCurrentAdmin();
+  const admin = await getCurrentStaff();
   if (!admin) return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
   const batchId = Number((await ctx.params).id);
   if (!Number.isInteger(batchId) || batchId < 1) return new Response("Not found", { status: 404 });

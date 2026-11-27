@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminFrame from "./admin-frame";
 
@@ -27,14 +27,14 @@ export const formatTransfer = (date: Date, time: Date) =>
 
 /** Dashboard frame (sidebar, top bar, footer) for every admin page. Checks the session first. */
 export default async function AdminShell({ children }: { children: ReactNode }) {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const [pending, waiting, toExport] = await Promise.all([
     prisma.donation.count({ where: { verificationStatus: "PENDING_SLIP_CHECK" } }),
     prisma.donation.count({ where: { verificationStatus: "WAITING_TREASURY_RD" } }),
     prisma.donation.count({ where: { verificationStatus: "WAITING_TREASURY_RD", needTaxDeduction: true, edonationExportStatus: "PENDING" } }),
   ]);
   return (
-    <AdminFrame admin={{ fullName: admin.fullName, email: admin.email }} counts={{ pending, waiting, toExport }}>
+    <AdminFrame admin={{ fullName: admin.fullName, email: admin.email, role: admin.role }} counts={{ pending, waiting, toExport }}>
       {children}
     </AdminFrame>
   );

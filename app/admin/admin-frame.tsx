@@ -3,14 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import type { ReactNode } from "react";
+import { startTransition, useEffect, useState, useSyncExternalStore } from "react";
+import type { FocusEvent, FormEvent, MouseEvent, ReactNode } from "react";
 import { logout } from "@/app/login/actions";
+import type { AdminRole } from "@/generated/prisma/enums";
+import { useConfirm } from "@/app/components/feedback";
 
-// Shown in the footer of every admin page.
-export const ADMIN_CREDIT = "พัฒนาระบบโดย งานเทคโนโลยีสารสนเทศ คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา";
-
-type IconName = "dashboard" | "excel" | "slip" | "treasury" | "list" | "fund" | "students" | "certificate" | "site" | "logout";
+type IconName = "dashboard" | "excel" | "slip" | "treasury" | "list" | "fund" | "students" | "certificate" | "site" | "logout" | "users";
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -24,6 +23,7 @@ function Icon({ name }: { name: IconName }) {
     certificate: <><rect x="3" y="4" width="18" height="13" rx="1.5" /><path d="M7 9h10M7 12.5h6M15 17v4l2-1.2 2 1.2v-4" /></>,
     site: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
     logout: <path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l-4-4 4-4M6 12h11" />,
+    users: <><circle cx="10" cy="8" r="3.5" /><path d="M3.5 20a6.5 6.5 0 0 1 10.6-5M18 14v6M15 17h6" /></>,
   };
   return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -37,13 +37,17 @@ const subscribe = (callback: () => void) => {
   return () => media.removeEventListener("change", callback);
 };
 
-export default function AdminFrame({ admin, counts, children }: { admin: { fullName: string; email: string }; counts: { pending: number; waiting: number; toExport: number }; children: ReactNode }) {
+export default function AdminFrame({ admin, counts, children }: { admin: { fullName: string; email: string; role: AdminRole }; counts: { pending: number; waiting: number; toExport: number }; children: ReactNode }) {
   const pathname = usePathname();
   const status = useSearchParams().get("status");
   const isMobile = useSyncExternalStore(subscribe, () => window.matchMedia(MOBILE_QUERY).matches, () => false);
   const [collapsed, setCollapsed] = useState(false); // desktop: sidebar hidden
   const [drawerOpen, setDrawerOpen] = useState(false); // mobile: sidebar shown over the page
   const sidebarVisible = isMobile ? drawerOpen : !collapsed;
+  const rail = collapsed && !isMobile; // desktop collapse keeps a narrow icon rail
+  const confirm = useConfirm();
+  // Hover/focus label for rail icons. Drawn with position: fixed so the scrolling menu cannot clip it.
+  const [tip, setTip] = useState<{ label: string; top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -52,7 +56,7 @@ export default function AdminFrame({ admin, counts, children }: { admin: { fullN
     return () => window.removeEventListener("keydown", onKey);
   }, [drawerOpen]);
 
-  const groups: { title: string; items: NavItem[] }[] = [
+  const allGroups: { title: string; adminOnly?: boolean; items: NavItem[] }[] = [
     {
       title: "งานประจำวัน",
       items: [
@@ -64,38 +68,54 @@ export default function AdminFrame({ admin, counts, children }: { admin: { fullN
     },
     {
       title: "ตั้งค่า",
+      adminOnly: true, // employees handle daily work only
       items: [
         { href: "/admin/settings", label: "กองทุนและการชำระเงิน", icon: "fund", match: (path) => path === "/admin/settings" },
         { href: "/admin/settings/students", label: "รายชื่อนิสิตผู้รับทุน", icon: "students", match: (path) => path === "/admin/settings/students" },
         { href: "/admin/settings/certificate", label: "ใบอนุโมทนาบัตรและอีเมล", icon: "certificate", match: (path) => path === "/admin/settings/certificate" },
+        { href: "/admin/settings/users", label: "ผู้ใช้งานระบบ", icon: "users", match: (path) => path === "/admin/settings/users" },
       ],
     },
   ];
+  const groups = allGroups.filter((group) => !group.adminOnly || admin.role === "ADMIN");
   const current = groups.flatMap((group) => group.items).find((item) => item.match(pathname, status));
 
   function toggleSidebar() {
     if (isMobile) setDrawerOpen(!drawerOpen);
     else setCollapsed(!collapsed);
+    setTip(null);
+  }
+
+  function showTip(event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) {
+    const target = rail ? (event.target as Element).closest<HTMLElement>("[data-tip]") : null;
+    if (!target) return setTip(null);
+    const rect = target.getBoundingClientRect();
+    setTip({ label: target.dataset.tip ?? "", top: rect.top + rect.height / 2, left: rect.right + 10 });
+  }
+
+  async function confirmLogout(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (await confirm({ title: "ออกจากระบบ?", content: "คุณต้องเข้าสู่ระบบอีกครั้งเพื่อใช้งานต่อ", okText: "ออกจากระบบ" })) startTransition(() => logout());
   }
 
   return (
-    <div className={`admin-app ${collapsed ? "is-collapsed" : ""} ${drawerOpen ? "is-drawer-open" : ""}`}>
+    <div className={`admin-app ${rail ? "is-collapsed" : ""} ${drawerOpen ? "is-drawer-open" : ""}`}>
       <a className="admin-skip" href="#admin-content">ข้ามไปยังเนื้อหา</a>
-      <aside id="admin-sidebar" className="admin-sidebar" aria-label="เมนูผู้ดูแล" inert={!sidebarVisible || undefined}>
-        <Link href="/admin" className="admin-sidebar-brand" onClick={() => setDrawerOpen(false)}>
-          <Image src="/images/LogoMed2.png" alt="" width={34} height={38} />
-          <span><strong>MED UP <em>e-Donation</em></strong><small>ระบบจัดการกองทุนทุนการศึกษา</small></span>
+      <aside id="admin-sidebar" className="admin-sidebar" aria-label="เมนูผู้ดูแล" inert={(isMobile && !drawerOpen) || undefined} onMouseOver={showTip} onMouseLeave={() => setTip(null)} onFocus={showTip} onBlur={() => setTip(null)}>
+        <Link href="/admin" className="admin-sidebar-brand" onClick={() => setDrawerOpen(false)} data-tip="คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา">
+          <span className="admin-sidebar-logo"><Image src="/images/LogoMed2.png" alt="" width={30} height={34} /></span>
+          <span className="admin-sidebar-label"><strong>คณะแพทยศาสตร์</strong><small>มหาวิทยาลัยพะเยา</small></span>
         </Link>
-        <nav className="admin-sidebar-nav">
+        <nav className="admin-sidebar-nav" onScroll={() => setTip(null)}>
           {groups.map((group) => (
             <div key={group.title} className="admin-nav-group">
               <p className="admin-nav-title">{group.title}</p>
               <ul>
                 {group.items.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href} aria-current={item === current ? "page" : undefined} onClick={() => setDrawerOpen(false)}>
+                    <Link href={item.href} aria-current={item === current ? "page" : undefined} onClick={() => setDrawerOpen(false)} data-tip={item.label}>
                       <Icon name={item.icon} />
-                      <span>{item.label}</span>
+                      <span className="admin-sidebar-label">{item.label}</span>
                       {item.count ? <span className="admin-nav-count" aria-label={item.countLabel ?? `${item.count} รายการ`} title={item.countLabel}>{item.count > 99 ? "99+" : item.count}</span> : null}
                     </Link>
                   </li>
@@ -104,29 +124,36 @@ export default function AdminFrame({ admin, counts, children }: { admin: { fullN
             </div>
           ))}
         </nav>
-        <Link href="/" className="admin-sidebar-site" target="_blank"><Icon name="site" /><span>ดูหน้าเว็บไซต์</span></Link>
+        <div className="admin-sidebar-footer">
+          <Link href="/" className="admin-sidebar-site" target="_blank" data-tip="ดูหน้าเว็บไซต์"><Icon name="site" /><span className="admin-sidebar-label">ดูหน้าเว็บไซต์</span></Link>
+          <form onSubmit={confirmLogout}><button type="submit" className="admin-sidebar-logout" data-tip="ออกจากระบบ"><Icon name="logout" /><span className="admin-sidebar-label">ออกจากระบบ</span></button></form>
+        </div>
       </aside>
+      {rail && tip && <div className="admin-rail-tip" style={{ top: tip.top, left: tip.left }} aria-hidden="true">{tip.label}</div>}
       {isMobile && drawerOpen && <button type="button" className="admin-backdrop" aria-label="ปิดเมนู" onClick={() => setDrawerOpen(false)} />}
 
       <div className="admin-body">
         <header className="admin-topbar">
           <button type="button" className="admin-hamburger" onClick={toggleSidebar} aria-controls="admin-sidebar" aria-expanded={sidebarVisible} aria-label={sidebarVisible ? "ปิดเมนูด้านข้าง" : "เปิดเมนูด้านข้าง"}>
-            <span /><span /><span />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="3" />
+              <path d="M9 4v16" />
+              <path className="admin-hamburger-chevron" d="m15.5 10-2 2 2 2" />
+            </svg>
           </button>
           <div className="admin-topbar-title">
-            <span>ผู้ดูแลระบบ</span>
-            <strong>{pathname.startsWith("/admin/donations/") ? "รายละเอียดรายการบริจาค" : current?.label ?? "ผู้ดูแลระบบ"}</strong>
+            <strong>MED UP <em>e-Donation</em></strong>
+            <span>ระบบจัดการทุนการศึกษา</span>
           </div>
           <div className="admin-topbar-user">
             <span className="admin-avatar" aria-hidden="true">{admin.fullName.trim().charAt(0) || "A"}</span>
             <span className="admin-user-text"><strong>{admin.fullName}</strong><small>{admin.email}</small></span>
-            <form action={logout}><button type="submit" className="admin-logout"><Icon name="logout" /><span>ออกจากระบบ</span></button></form>
           </div>
         </header>
         <div id="admin-content" className="admin-content" tabIndex={-1}>{children}</div>
         <footer className="admin-footer">
-          <span>© 2026 คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา · MED UP e-Donation</span>
-          <span>{ADMIN_CREDIT}</span>
+          <span>MED UP e-Donation · ระบบจัดการทุนการศึกษา</span>
+          <span>© 2026 คณะแพทยศาสตร์ มหาวิทยาลัยพะเยา</span>
         </footer>
       </div>
     </div>

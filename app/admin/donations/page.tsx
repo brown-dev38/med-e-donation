@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import type { Prisma } from "@/generated/prisma/client";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatBaht, formatThaiDateTime, formatTransfer, STATUS_LABELS, StatusBadge, type DonationStatus } from "../admin-shell";
 
@@ -30,7 +30,7 @@ function buildHref(params: { status: string; q: string; page?: number }) {
 }
 
 async function DonationList({ searchParams }: { searchParams: PageProps<"/admin/donations">["searchParams"] }) {
-  await requireAdmin();
+  await requireStaff();
   const params = await searchParams;
   const status = typeof params.status === "string" && (params.status === "ALL" || STATUSES.includes(params.status as DonationStatus)) ? params.status : "PENDING_SLIP_CHECK";
   const q = typeof params.q === "string" ? params.q.trim().slice(0, 100) : "";

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { UiProvider } from "@/app/components/feedback";
 import AdminShell from "./admin-shell";
 import "./styles.css";
 import "./review.css";
@@ -13,8 +14,10 @@ export const instant = false;
 // navigating between admin pages; only the page content below it swaps and shows its own loading state.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<main className="admin-loading" role="status">กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ…</main>}>
-      <AdminShell>{children}</AdminShell>
-    </Suspense>
+    <UiProvider>
+      <Suspense fallback={<main className="admin-loading" role="status">กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ…</main>}>
+        <AdminShell>{children}</AdminShell>
+      </Suspense>
+    </UiProvider>
   );
 }

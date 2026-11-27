@@ -81,14 +81,16 @@ export async function createFund(_previous: SettingsState, formData: FormData): 
 }
 
 /** Deletes a purpose that never received a donation; otherwise it should be closed instead. */
-export async function deleteFund(formData: FormData) {
+export async function deleteFund(_previous: SettingsState, formData: FormData): Promise<SettingsState> {
   const admin = await requireAdmin();
   const fundId = Number(formData.get("fundId"));
-  if (!Number.isInteger(fundId) || fundId < 1) return;
-  if ((await prisma.donation.count({ where: { fundId } })) > 0) return;
+  if (!Number.isInteger(fundId) || fundId < 1) return { status: "error", message: "ไม่พบวัตถุประสงค์" };
+  if ((await prisma.donation.count({ where: { fundId } })) > 0) return { status: "error", message: "ลบไม่ได้ เพราะมีรายการบริจาคแล้ว" };
   const deleted = await prisma.scholarshipFund.deleteMany({ where: { fundId } });
-  if (deleted.count) await prisma.auditLog.create({ data: { userId: admin.userId, action: "DELETE_FUND", targetTable: "scholarship_funds", targetId: String(fundId) } });
+  if (!deleted.count) return { status: "error", message: "ไม่พบวัตถุประสงค์" };
+  await prisma.auditLog.create({ data: { userId: admin.userId, action: "DELETE_FUND", targetTable: "scholarship_funds", targetId: String(fundId) } });
   refresh();
+  return { status: "success", message: "ลบวัตถุประสงค์แล้ว" };
 }
 
 export async function saveFund(_previous: SettingsState, formData: FormData): Promise<SettingsState> {
@@ -159,16 +161,20 @@ export async function addStudents(_previous: SettingsState, formData: FormData):
   return { status: "success", message: `เพิ่ม ${fresh.length} รายชื่อ${skipped ? ` (ข้าม ${skipped} รายชื่อที่มีอยู่แล้ว)` : ""}` };
 }
 
-export async function updateStudent(formData: FormData) {
+const STUDENT_DONE = { delete: "ลบรายชื่อแล้ว", activate: "แสดงรายชื่อบนฟอร์มแล้ว", deactivate: "ซ่อนรายชื่อจากฟอร์มแล้ว" } as const;
+
+export async function updateStudent(_previous: SettingsState, formData: FormData): Promise<SettingsState> {
   const admin = await requireAdmin();
   const studentId = Number(formData.get("studentId"));
   const op = formData.get("op");
-  if (!Number.isInteger(studentId) || studentId < 1) return;
-  if (op === "delete") await prisma.scholarshipStudent.deleteMany({ where: { studentId } });
-  else if (op === "activate" || op === "deactivate") await prisma.scholarshipStudent.updateMany({ where: { studentId }, data: { isActive: op === "activate" } });
-  else return;
-  await prisma.auditLog.create({ data: { userId: admin.userId, action: `STUDENT_${String(op).toUpperCase()}`, targetTable: "scholarship_students", targetId: String(studentId) } });
+  if (!Number.isInteger(studentId) || studentId < 1 || (op !== "delete" && op !== "activate" && op !== "deactivate")) return { status: "error", message: "ไม่พบรายชื่อนิสิต" };
+  const result = op === "delete"
+    ? await prisma.scholarshipStudent.deleteMany({ where: { studentId } })
+    : await prisma.scholarshipStudent.updateMany({ where: { studentId }, data: { isActive: op === "activate" } });
+  if (!result.count) return { status: "error", message: "ไม่พบรายชื่อนิสิต" };
+  await prisma.auditLog.create({ data: { userId: admin.userId, action: `STUDENT_${op.toUpperCase()}`, targetTable: "scholarship_students", targetId: String(studentId) } });
   refresh();
+  return { status: "success", message: STUDENT_DONE[op] };
 }
 
 const TEXT_LIMITS = {

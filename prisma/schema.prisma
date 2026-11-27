@@ -9,8 +9,7 @@ datasource db {
 
 enum AdminRole {
   ADMIN
-  FINANCE_OFFICER
-  VIEWER
+  EMPLOYEE
 }
 
 enum DonorType {

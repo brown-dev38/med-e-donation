@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { App } from "antd";
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import {
   bangkokNow,
   DONOR_PREFIXES,
   emptyDonationFields,
+  MAX_PREFIX_LENGTH,
   normalizeAmount,
   PRESET_AMOUNTS,
   validateDonation,
@@ -15,6 +16,7 @@ import {
   type FieldErrors,
   type FieldName,
 } from "@/lib/donation-form";
+import { useConfirm } from "@/app/components/feedback";
 import ThaiQr from "@/app/components/promptpay-qr";
 import type { QrTarget } from "@/lib/promptpay";
 import { submitDonation } from "./actions";
@@ -55,6 +57,26 @@ function StepHeading({ number, title, detail }: { number: number; title: string;
   );
 }
 
+/** What the donor is about to send, shown in the confirm modal. */
+function ConfirmSummary({ fields, fund, amount, slipName }: { fields: DonationFields; fund: FundOption; amount: string; slipName: string }) {
+  const rows: [string, string][] = [
+    ["วัตถุประสงค์", fund.fundNameTh],
+    ...(fund.requiresStudentName && fields.studentRecipientName.trim() ? [["นิสิตผู้รับทุน", fields.studentRecipientName.trim()] as [string, string]] : []),
+    ["จำนวนเงิน", `${formatBaht(amount)} บาท`],
+    ["ผู้บริจาค", `${fields.donorPrefix.trim()} ${fields.donorName.trim()}`.trim()],
+    ["อีเมลรับใบอนุโมทนาบัตร", fields.email.trim()],
+    ["วันเวลาที่โอน", `${fields.transferDate} ${fields.transferTime} น.`],
+    ["สลิป", slipName],
+    ["ลดหย่อนภาษี e-Donation", fields.needTaxDeduction ? "ต้องการ" : "ไม่ต้องการ"],
+  ];
+  return (
+    <div className="donate-confirm">
+      <p>กรุณาตรวจสอบข้อมูลก่อนส่ง เมื่อส่งแล้วจะแก้ไขเองไม่ได้</p>
+      <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+    </div>
+  );
+}
+
 export default function DonateForm(props: { funds: FundOption[]; students: StudentChoice[]; initialFund: string }) {
   // Remounting the form is the simplest way to clear action state for another donation.
   const [formKey, setFormKey] = useState(0);
@@ -75,6 +97,8 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<string | null>(null);
+  const confirm = useConfirm();
+  const { message } = App.useApp();
 
   useEffect(() => () => { if (previewRef.current) URL.revokeObjectURL(previewRef.current); }, []);
 
@@ -99,7 +123,9 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
   const describedBy = (name: FieldName, hint = false) => (errors[name] ? `${name}-error` : hint ? `${name}-hint` : undefined);
 
   function chooseDonorType(type: keyof typeof DONOR_PREFIXES) {
-    setFields((current) => ({ ...current, donorType: type, donorPrefix: (DONOR_PREFIXES[type] as readonly string[]).includes(current.donorPrefix) ? current.donorPrefix : "" }));
+    // Clear the prefix only when it is a suggestion of the other type (e.g. "นาย" after switching to a company).
+    const other = (DONOR_PREFIXES[type === "CORPORATE" ? "INDIVIDUAL" : "CORPORATE"] as readonly string[]);
+    setFields((current) => ({ ...current, donorType: type, donorPrefix: other.includes(current.donorPrefix.trim()) ? "" : current.donorPrefix }));
     markEdited("donorType");
     markEdited("donorPrefix");
   }
@@ -127,7 +153,7 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
     }
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     // Submit manually so React does not reset the form (and the chosen slip) on a server error.
     event.preventDefault();
     if (pending) return;
@@ -139,10 +165,19 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
     const firstError = FIELD_ORDER.find((name) => nextErrors[name]);
     if (firstError) {
       setClientErrors(nextErrors);
+      message.error(`กรุณาตรวจสอบข้อมูลให้ครบถ้วน (${Object.keys(nextErrors).length} รายการ)`);
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(`[data-field="${firstError}"]`)?.focus());
       return;
     }
     setClientErrors(null);
+    const confirmed = await confirm({
+      title: "ยืนยันการบริจาค",
+      content: <ConfirmSummary fields={fields} fund={fund} amount={amount!} slipName={slip!.name} />,
+      okText: "ยืนยันและส่งข้อมูล",
+      cancelText: "กลับไปแก้ไข",
+      width: 480,
+    });
+    if (!confirmed) return;
     const formData = new FormData();
     for (const [name, value] of Object.entries(fields)) {
       if (typeof value === "boolean") { if (value) formData.set(name, "on"); }
@@ -153,8 +188,13 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
   }
 
   useEffect(() => {
-    if (state?.status === "success") window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [state]);
+    if (state?.status === "success") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      message.success(`ส่งข้อมูลการบริจาคเรียบร้อยแล้ว เลขอ้างอิง ${state.referenceNo}`);
+    } else if (state?.status === "error") {
+      message.error(state.fieldErrors ? "กรุณาตรวจสอบข้อมูลที่ไฮไลต์ไว้" : state.message);
+    }
+  }, [state, message]);
 
   if (state?.status === "success") {
     return (
@@ -174,7 +214,6 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
           <p>ข้อมูลลดหย่อนภาษีจะถูกนำส่งระบบ e-Donation ของกรมสรรพากรภายใน 2 สัปดาห์หลังตรวจสอบยอดโอน หากพ้นกำหนดแล้วยังไม่พบข้อมูล กรุณาติดต่อเจ้าหน้าที่พร้อมแจ้งเลขอ้างอิงนี้</p>
         </div>
         <div className="donate-success-actions">
-          <Link href="/" className="donate-button">กลับหน้าแรก</Link>
           <button type="button" className="donate-button donate-button-ghost" onClick={onReset}>บริจาคเพิ่มอีกรายการ</button>
         </div>
       </section>
@@ -280,10 +319,11 @@ function DonateFormInner({ funds: fundOptions, students, initialFund, onReset }:
           <h3 id="step-4-title" className="sr-only">ข้อมูลผู้บริจาค</h3>
           <div className="donate-grid donate-grid-name">
             <Field id="donorPrefix" label={isCorporate ? "ประเภทนิติบุคคล" : "คำนำหน้า"} required error={errors.donorPrefix}>
-              <select id="donorPrefix" data-field="donorPrefix" value={fields.donorPrefix} onChange={(e) => update("donorPrefix", e.target.value)} aria-invalid={!!errors.donorPrefix} aria-describedby={describedBy("donorPrefix")}>
-                <option value="">เลือก</option>
-                {prefixes.map((prefix) => <option key={prefix} value={prefix}>{prefix}</option>)}
-              </select>
+              {/* Free text with suggestions: donors can pick a common prefix or type their own (ยศ, ตำแหน่งทางวิชาการ). */}
+              <input id="donorPrefix" data-field="donorPrefix" list="donorPrefix-options" value={fields.donorPrefix} onChange={(e) => update("donorPrefix", e.target.value)} maxLength={MAX_PREFIX_LENGTH} autoComplete={isCorporate ? "off" : "honorific-prefix"} placeholder={isCorporate ? "เลือกหรือพิมพ์" : "เลือกหรือพิมพ์ เช่น ผศ.ดร."} aria-invalid={!!errors.donorPrefix} aria-describedby={describedBy("donorPrefix")} />
+              <datalist id="donorPrefix-options">
+                {prefixes.map((prefix) => <option key={prefix} value={prefix} />)}
+              </datalist>
             </Field>
             <Field id="donorName" label={isCorporate ? "ชื่อนิติบุคคล / องค์กร" : "ชื่อ–นามสกุล"} required error={errors.donorName}>
               <input id="donorName" data-field="donorName" value={fields.donorName} onChange={(e) => update("donorName", e.target.value)} maxLength={255} autoComplete={isCorporate ? "organization" : "name"} aria-invalid={!!errors.donorName} aria-describedby={describedBy("donorName")} />

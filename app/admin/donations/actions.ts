@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { Prisma } from "@/generated/prisma/client";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { fiscalYearBe, formatDocumentNo } from "@/lib/certificate-number";
 import { decryptTaxId } from "@/lib/donor-crypto";
 import { generateCertificatePdf, sendCertificateEmail, sendRdConfirmationEmail, type EmailResult } from "@/lib/donor-notifications";
@@ -28,7 +28,7 @@ function donationIdFrom(formData: FormData) {
 
 /** Approval 1: slip, name and tax ID match the bank book. Issues the certificate number. */
 export async function approveSlip(_previous: ReviewState, formData: FormData): Promise<ReviewState> {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const donationId = donationIdFrom(formData);
   if (!donationId) return { status: "error", message: "ไม่พบรายการบริจาค" };
   const checks = ["checkSlip", "checkName", "checkTaxId"].every((name) => formData.get(name) === "on");
@@ -76,7 +76,7 @@ export async function approveSlip(_previous: ReviewState, formData: FormData): P
 }
 
 export async function rejectSlip(_previous: ReviewState, formData: FormData): Promise<ReviewState> {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const donationId = donationIdFrom(formData);
   if (!donationId) return { status: "error", message: "ไม่พบรายการบริจาค" };
   const raw = formData.get("reason");
@@ -102,7 +102,7 @@ export async function rejectSlip(_previous: ReviewState, formData: FormData): Pr
 
 /** Shows the full tax ID to compare with the donor's documents. Every view is audited (PDPA). */
 export async function revealTaxId(donationId: string): Promise<{ taxId: string } | { error: string }> {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   if (!UUID.test(donationId)) return { error: "ไม่พบรายการบริจาค" };
   const donation = await prisma.donation.findUnique({ where: { donationId }, select: { taxIdEncrypted: true } });
   if (!donation) return { error: "ไม่พบรายการบริจาค" };
@@ -119,7 +119,7 @@ const emailNote = (result: EmailResult) => (result.ok && result.delivery === "ou
 
 /** Approval 2: treasury confirmed and the donation was keyed into the RD e-Donation system. */
 export async function approveRdSubmission(_previous: ReviewState, formData: FormData): Promise<ReviewState> {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const donationId = donationIdFrom(formData);
   if (!donationId) return { status: "error", message: "ไม่พบรายการบริจาค" };
   if (formData.get("checkKeyed") !== "on") return { status: "error", message: "กรุณายืนยันว่าคีย์ข้อมูลเข้าระบบ e-Donation แล้ว" };
@@ -155,7 +155,7 @@ export async function approveRdSubmission(_previous: ReviewState, formData: Form
 
 /** Resends email 1 (certificate) or email 2 (RD confirmation). `regenerate` re-renders the PDF with current settings. */
 export async function resendDonorEmail(_previous: ReviewState, formData: FormData): Promise<ReviewState> {
-  const admin = await requireAdmin();
+  const admin = await requireStaff();
   const donationId = donationIdFrom(formData);
   const kind = formData.get("kind");
   if (!donationId || (kind !== "certificate" && kind !== "rd")) return { status: "error", message: "ไม่พบรายการบริจาค" };
